@@ -1,0 +1,61 @@
+{
+  "pages": [
+    {
+      "path": "pages/file-page/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/task-page/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/mine-page/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/file-detail/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    }
+  ],
+
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "Jarvis",
+    "navigationBarBackgroundColor": "#F8F8F8"
+  },
+  "uniIdRouter": {},
+  "tabBar": {
+    "color": "#222222",
+    "selectedColor": "#001AA2",
+    "borderStyle": "black",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/file-page/index",
+        "iconPath": "static/images/icon-file.png",
+        "selectedIconPath": "static/images/icon-file.png",
+        "text": "文件"
+      },
+      {
+        "pagePath": "pages/task-page/index",
+        "iconPath": "static/images/icon-task.png",
+        "selectedIconPath": "static/images/icon-task.png",
+        "text": "任务"
+      },
+      {
+        "pagePath": "pages/mine-page/index",
+        "iconPath": "static/images/icon-mine.png",
+        "selectedIconPath": "static/images/icon-mine.png",
+        "text": "我的"
+      }
+    ]
+  }
+}
