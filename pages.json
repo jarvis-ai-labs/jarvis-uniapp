@@ -41,19 +41,19 @@
       {
         "pagePath": "pages/file-page/index",
         "iconPath": "static/images/icon-file.png",
-        "selectedIconPath": "static/images/icon-file.png",
+        "selectedIconPath": "static/images/icon-file-active.png",
         "text": "文件"
       },
       {
         "pagePath": "pages/task-page/index",
         "iconPath": "static/images/icon-task.png",
-        "selectedIconPath": "static/images/icon-task.png",
+        "selectedIconPath": "static/images/icon-task-active.png",
         "text": "任务"
       },
       {
         "pagePath": "pages/mine-page/index",
         "iconPath": "static/images/icon-mine.png",
-        "selectedIconPath": "static/images/icon-mine.png",
+        "selectedIconPath": "static/images/icon-mine-active.png",
         "text": "我的"
       }
     ]

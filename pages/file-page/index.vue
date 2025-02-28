@@ -6,6 +6,7 @@
         :border="false"
         background-color="#FFFFFF"
         status-bar
+        title="文件"
         left-icon="list"
         right-icon="search"
         @clickLeft="handleClickLeft"
