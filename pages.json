@@ -1,25 +1,31 @@
 {
   "pages": [
     {
-      "path": "pages/file-page/index",
+      "path": "pages/file/index",
       "style": {
         "navigationStyle": "custom"
       }
     },
     {
-      "path": "pages/task-page/index",
+      "path": "pages/task/index",
       "style": {
         "navigationStyle": "custom"
       }
     },
     {
-      "path": "pages/mine-page/index",
+      "path": "pages/mine/index",
       "style": {
         "navigationStyle": "custom"
       }
     },
     {
       "path": "pages/file-detail/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/sound-recording/index",
       "style": {
         "navigationStyle": "custom"
       }
@@ -39,19 +45,19 @@
     "backgroundColor": "#ffffff",
     "list": [
       {
-        "pagePath": "pages/file-page/index",
+        "pagePath": "pages/file/index",
         "iconPath": "static/images/icon-file.png",
         "selectedIconPath": "static/images/icon-file-active.png",
         "text": "文件"
       },
       {
-        "pagePath": "pages/task-page/index",
+        "pagePath": "pages/task/index",
         "iconPath": "static/images/icon-task.png",
         "selectedIconPath": "static/images/icon-task-active.png",
         "text": "任务"
       },
       {
-        "pagePath": "pages/mine-page/index",
+        "pagePath": "pages/mine/index",
         "iconPath": "static/images/icon-mine.png",
         "selectedIconPath": "static/images/icon-mine-active.png",
         "text": "我的"

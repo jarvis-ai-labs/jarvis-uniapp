@@ -4,11 +4,19 @@
       <uni-nav-bar
         :fixed="true"
         :border="false"
+        height="50px"
         background-color="#FFFFFF"
         status-bar
         left-icon="back"
         leftText="文件"
-        @clickLeft="handleClickLeft" />
+        @clickLeft="handleClickLeft">
+        <!-- <block slot="left">
+          <view class="back-btn">
+            <uni-icons type="back" size="30" color="#ffffff" />
+            <text>文件</text>
+          </view>
+        </block> -->
+      </uni-nav-bar>
 
       <view class="file-detail-box">
         <view class="tabs">
@@ -33,10 +41,6 @@
 
           <view class="transcription-box">
             <view>{{ fileDetail.text_content }}</view>
-            <!-- <view v-for="(dialog, index) in parsedDialogs" :key="index" class="dialog-item">
-              <view class="dialog-speaker">{{ dialog.speaker }}：</view>
-              <view class="dialog-content">{{ dialog.content }}</view>
-            </view> -->
           </view>
         </template>
 
@@ -198,7 +202,7 @@ const switchTab = (tab) => {
 };
 
 const handleClickLeft = () => {
-  uni.switchTab({ url: '/pages/file-page/index' });
+  uni.switchTab({ url: '/pages/file/index' });
 };
 
 const handleExportWord = () => {
@@ -301,9 +305,8 @@ const handleCopyText = () => {
 // });
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .container {
-  min-height: 100vh;
   .container-box {
     padding-bottom: 30px;
   }
@@ -311,8 +314,8 @@ const handleCopyText = () => {
 
 .file-detail-box {
   width: 95vw;
-  min-height: calc(100vh - 110px);
-  margin: 30px auto 0;
+  min-height: calc(100vh - 100px);
+  margin: 20px auto 0;
   border-radius: 24px;
   background: #ffffff;
   box-shadow: 0 0 8px 2px rgba(140, 145, 151, 0.15);

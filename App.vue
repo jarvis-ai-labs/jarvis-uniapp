@@ -13,6 +13,8 @@ export default {
 </script>
 
 <style lang="scss">
+@import '~@/static/iconfonts/iconfont.css';
+
 @font-face {
   font-family: Avenir;
   src: url('/static/fonts/Avenir.ttc');
@@ -33,7 +35,7 @@ body {
 }
 
 .container {
-  min-height: 100vh;
+  min-height: calc(100vh - 50px);
   position: relative;
   background: linear-gradient(180deg, #d9e7f2 0%, #e2edf7 55.87%, #ffffff 100%);
   // 添加一个伪元素来实现复杂的渐变叠加效果
@@ -70,5 +72,9 @@ body {
 
 .ua__markdown {
   padding: 0 10px;
+}
+
+uni-button:after {
+  border: none !important;
 }
 </style>

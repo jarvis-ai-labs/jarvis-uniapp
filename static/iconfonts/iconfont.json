@@ -1,0 +1,30 @@
+{
+  "id": "4844904",
+  "name": "Jarvis",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "1251256",
+      "name": "pause",
+      "font_class": "pause",
+      "unicode": "e66c",
+      "unicode_decimal": 58988
+    },
+    {
+      "icon_id": "5428546",
+      "name": "stop",
+      "font_class": "stop",
+      "unicode": "e71e",
+      "unicode_decimal": 59166
+    },
+    {
+      "icon_id": "10972031",
+      "name": "mic",
+      "font_class": "mic",
+      "unicode": "e68e",
+      "unicode_decimal": 59022
+    }
+  ]
+}

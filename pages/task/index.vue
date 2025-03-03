@@ -1,7 +1,7 @@
 <template>
   <view class="container">
     <view class="container-box">
-      <uni-nav-bar :fixed="true" :border="false" background-color="#FFFFFF" status-bar title="任务" />
+      <uni-nav-bar :fixed="true" :border="false" height="50px" background-color="#FFFFFF" status-bar title="任务" />
     </view>
   </view>
 </template>
@@ -15,4 +15,4 @@ export default {
 };
 </script>
 
-<style lang="scss"></style>
+<style lang="scss" scoped></style>

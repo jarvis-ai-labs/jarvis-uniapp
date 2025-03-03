@@ -4,6 +4,7 @@
       <uni-nav-bar
         :fixed="true"
         :border="false"
+        height="50px"
         background-color="#FFFFFF"
         status-bar
         title="文件"
@@ -26,20 +27,36 @@
           </view>
         </view>
       </view>
+
+      <button class="sound-recording-btn" @click="handleSoundRecording">
+        <uni-icons type="mic-filled" size="30" color="#ffffff" />
+      </button>
+
+      <!-- 提示窗示例 -->
+      <!-- <uni-popup ref="alertDialog" type="dialog">
+        <uni-popup-dialog
+          type="warn"
+          cancelText="关闭"
+          confirmText="同意"
+          title="通知"
+          content="欢迎使用 uni-popup!"
+          @confirm="dialogConfirm"
+          @close="dialogClose"></uni-popup-dialog>
+      </uni-popup> -->
     </view>
   </view>
 </template>
 
 <script setup>
 import { ref } from 'vue';
+import permision from '@/js_sdk/wa-permission/permission.js';
+
 import fileListData from '@/data/fileList.json';
 
-// 数据定义
 const fileList = ref(fileListData);
+// const alertDialog = ref(null);
 
-// 方法定义
 const handleFileItem = (item) => {
-  console.log('点击文件:', item);
   uni.navigateTo({
     url: '/pages/file-detail/index?id=' + item.id
   });
@@ -52,13 +69,60 @@ const handleClickLeft = () => {
 const handleClickRight = () => {
   console.log('点击右侧按钮');
 };
+
+const handleSoundRecording = async () => {
+  switch (uni.getSystemInfoSync().platform) {
+    case 'android':
+      const isRecordAudioGranted = await permision.requestAndroidPermission('android.permission.RECORD_AUDIO');
+      const isWriteStorageGranted = await permision.requestAndroidPermission(
+        'android.permission.WRITE_EXTERNAL_STORAGE'
+      );
+      // 1	已获取授权
+      // 0	未获取授权
+      // -1	被永久拒绝授权
+
+      console.log('录音权限', isRecordAudioGranted == 1 ? '已获取授权' : '未获取授权');
+      console.log('文件存储权限', isWriteStorageGranted == 1 ? '已获取授权' : '未获取授权');
+
+      if (isRecordAudioGranted > 0 && isWriteStorageGranted > 0) {
+        uni.navigateTo({ url: '/pages/sound-recording/index' });
+      } else {
+        uni.showModal({
+          title: '提示',
+          content: '录音功能需要录音和文件存储权限，请前往设置手动开启',
+          success: function (res) {
+            if (res.confirm) {
+              console.log('用户点击确定');
+              permision.gotoAppPermissionSetting();
+            } else if (res.cancel) {
+              console.log('用户点击取消');
+            }
+          }
+        });
+      }
+      break;
+
+    case 'ios':
+      permision.judgeIosPermission('record');
+
+      break;
+  }
+};
+
+// const dialogConfirm = () => {
+//   console.log('点击确认');
+// };
+
+// const dialogClose = () => {
+//   console.log('点击关闭');
+// };
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .file-list {
   position: relative;
   width: 95vw;
-  margin: 30px auto 0;
+  margin: 20px auto 0;
   border-radius: 24px;
   background: #ffffff;
   box-shadow: 0 0 8px 2px rgba(140, 145, 151, 0.15);
@@ -106,5 +170,17 @@ const handleClickRight = () => {
       }
     }
   }
+}
+.sound-recording-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #303e89;
+  position: fixed;
+  bottom: 100px;
+  right: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>

@@ -1,0 +1,24 @@
+@font-face {
+  font-family: 'iconfont';
+  src: url('/static/iconfonts/iconfont.ttf') format('truetype');
+}
+
+.iconfont {
+  font-family: 'iconfont' !important;
+  font-size: 16px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-pause:before {
+  content: '\e66c';
+}
+
+.icon-stop:before {
+  content: '\e71e';
+}
+
+.icon-mic:before {
+  content: '\e68e';
+}
