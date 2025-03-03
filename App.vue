@@ -35,7 +35,7 @@ body {
 }
 
 .container {
-  min-height: calc(100vh - 50px);
+  min-height: 100vh;
   position: relative;
   background: linear-gradient(180deg, #d9e7f2 0%, #e2edf7 55.87%, #ffffff 100%);
   // 添加一个伪元素来实现复杂的渐变叠加效果
@@ -54,6 +54,8 @@ body {
 
   .container-box {
     position: relative;
+    width: 100%;
+    height: 100%;
   }
 }
 

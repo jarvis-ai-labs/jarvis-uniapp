@@ -308,13 +308,13 @@ const handleCopyText = () => {
 <style lang="scss" scoped>
 .container {
   .container-box {
-    padding-bottom: 30px;
+    padding-bottom: 20px;
   }
 }
 
 .file-detail-box {
   width: 95vw;
-  min-height: calc(100vh - 100px);
+  min-height: calc(100vh - 150px);
   margin: 20px auto 0;
   border-radius: 24px;
   background: #ffffff;

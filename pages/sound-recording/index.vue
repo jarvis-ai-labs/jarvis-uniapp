@@ -41,7 +41,13 @@ import { ref, onMounted, onUnmounted } from 'vue';
 const fileName = ref('录音文件_' + new Date().toLocaleString());
 const startTime = ref(new Date().toLocaleTimeString());
 const isRecording = ref(false);
-const currentTime = ref(0);
+const currentTime = ref(500);
+
+const formatTime = (time) => {
+  const minutes = Math.floor(time / 60);
+  const seconds = time % 60;
+  return `${minutes < 10 ? '0' + minutes : minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
+};
 
 const handleStartPause = () => {
   isRecording.value = !isRecording.value;
@@ -80,7 +86,7 @@ const handleStop = () => {
 
 .record-progress {
   width: 100%;
-  height: calc(100vh - 50px - 80px - 100px);
+  height: calc(100vh - 265px);
   position: relative;
   .record-progress-box {
     width: 100%;
