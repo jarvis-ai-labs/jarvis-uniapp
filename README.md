@@ -1,1 +1,3 @@
 # jarvis-uniapp
+
+[RecApp Main][UniApp-Main]【在App内使用app-uni-support.js的授权许可】当前未获得授权许可。文件app-uni-support.js在uni-app中编译到App平台时仅供测试用（App平台包括：Android App、iOS App），不可用于正式发布或商用，正式发布或商用需先获取到商用授权许可（编译到其他平台时无此授权限制，比如：H5、小程序，均为免费授权）。未获得授权时，在App打开后第一次调用RecordApp.RequestPermission请求录音权限时，会先弹出商用授权提示框；获取到授权许可后，请在调用RequestPermission前设置 RecordApp.UniAppUseLicense='我已获得UniAppID=__UNI__B2340F4的商用授权' ，就不会弹提示框了；或者购买了配套的原生录音插件，设置RecordApp.UniNativeUtsPlugin参数后，也不会弹提示框。【获取授权方式】到DCloud插件市场购买授权: https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin-Android （会赠送Android版原生插件）；购买后可联系客服，同时提供订单信息，客服拉你进入VIP支持QQ群，入群后在群文件中可下载此js文件最新源码；客服联系方式：QQ 1251654593 ，或者直接联系作者QQ 753610399 （回复可能没有客服及时）。详细请参考文档: https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_UniApp
