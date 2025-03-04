@@ -5,10 +5,10 @@
 
       <view class="record-file">
         <view class="record-file-name">
-          <text>{{ fileName }}</text>
+          {{ fileName }}
         </view>
         <view class="record-file-time">
-          <text>{{ startTime }}</text>
+          {{ startTime }}
         </view>
       </view>
 
@@ -37,9 +37,12 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
+import { formatDate } from '@/utils';
 
-const fileName = ref('录音文件_' + new Date().toLocaleString());
-const startTime = ref(new Date().toLocaleTimeString());
+const now = Date.now();
+const fileName = ref('录音文件_' + formatDate(now).split(' ')[0] + '_' + formatDate(now).split(' ')[1]);
+const startTime = ref(formatDate(now));
+
 const isRecording = ref(false);
 const currentTime = ref(500);
 
