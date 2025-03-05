@@ -85,17 +85,17 @@ const handleSoundRecording = async () => {
   switch (uni.getSystemInfoSync().platform) {
     case 'android':
       const isRecordAudioGranted = await permision.requestAndroidPermission('android.permission.RECORD_AUDIO');
-      const isWriteStorageGranted = await permision.requestAndroidPermission(
-        'android.permission.WRITE_EXTERNAL_STORAGE'
-      );
+      console.log('录音权限', isRecordAudioGranted == 1 ? '已获取授权' : '未获取授权');
+
+      // const isWriteStorageGranted = await permision.requestAndroidPermission(
+      //   'android.permission.WRITE_EXTERNAL_STORAGE'
+      // );
       // 1	已获取授权
       // 0	未获取授权
       // -1	被永久拒绝授权
+      // console.log('文件存储权限', isWriteStorageGranted == 1 ? '已获取授权' : '未获取授权');
 
-      console.log('录音权限', isRecordAudioGranted == 1 ? '已获取授权' : '未获取授权');
-      console.log('文件存储权限', isWriteStorageGranted == 1 ? '已获取授权' : '未获取授权');
-
-      if (isRecordAudioGranted > 0 && isWriteStorageGranted > 0) {
+      if (isRecordAudioGranted > 0) {
         uni.navigateTo({ url: '/pages/record-sound/index' });
       } else {
         uni.showModal({
