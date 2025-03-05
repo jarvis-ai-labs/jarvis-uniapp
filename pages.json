@@ -25,7 +25,13 @@
       }
     },
     {
-      "path": "pages/sound-recording/index",
+      "path": "pages/record-sound/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/record-play/index",
       "style": {
         "navigationStyle": "custom"
       }

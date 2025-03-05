@@ -19,25 +19,21 @@
           </view>
         </view>
 
-        <view class="record-progress">
+        <view class="record-box">
           <!-- 可视化绘制 -->
           <view class="recwave-box">
-            <view style="height: 40px; width: 100%; background: #999; position: relative">
-              <view
-                style="height: 40px; background: #0b1; position: absolute"
-                :style="{ width: recpowerx + '%' }"></view>
-              <view style="padding-left: 50px; line-height: 40px; position: relative">{{ recpowert }}</view>
+            <view class="recwave-progress">
+              <view class="recwave-progress-bar" :style="{ width: recpowerx + '%' }"></view>
+              <view class="recwave-progress-text">{{ recpowert }}</view>
             </view>
 
-            <view class="recwave">
-              <canvas type="2d" class="recwave-WaveView"></canvas>
-            </view>
+            <canvas type="2d" class="recwave-WaveView"></canvas>
 
             <view>
               <TestPlayer ref="player" />
             </view>
           </view>
-          <view class="record-time">
+          <view class="record-time" v-if="recpowertTime">
             <text>{{ recpowertTime }}</text>
           </view>
         </view>
@@ -113,7 +109,7 @@ import { onShow } from '@dcloudio/uni-app';
 import { formatDate } from '@/utils';
 
 const now = Date.now();
-const fileName = ref('录音文件_' + formatDate(now).split(' ')[0] + '_' + formatDate(now).split(' ')[1]);
+const fileName = ref('Jarvis_录音_' + formatDate(now).split(' ')[0] + '_' + formatDate(now).split(' ')[1]);
 const startTime = ref(formatDate(now));
 const isRecording = ref(false);
 const recpowerx = ref(0);
@@ -132,7 +128,6 @@ const reclog = (msg, color) => {
     ':' +
     ('0' + now.getSeconds()).substr(-2);
   let txt = '[' + t + ']' + msg;
-  console.log(txt);
   reclogs.value.splice(0, 0, { txt: txt, color: color });
 };
 
@@ -264,13 +259,19 @@ const recStart = () => {
       RecordApp.UniFindCanvas(
         vue3This,
         ['.recwave-WaveView'],
-        `
-        this.waveView=Recorder.WaveView({compatibleCanvas:canvas1, width:300, height:100});
-        `,
+        `this.waveView=Recorder.WaveView({compatibleCanvas:canvas1, width:300, height:250});`,
         (canvas1) => {
-          vue3This.waveView = Recorder.WaveView({ compatibleCanvas: canvas1, width: 300, height: 100 });
+          vue3This.waveView = Recorder.WaveView({ compatibleCanvas: canvas1, width: 300, height: 250 });
         }
       );
+
+      // uni
+      //   .createSelectorQuery()
+      //   .selectAll('.record-box')
+      //   .boundingClientRect((data) => {
+      //     console.log('record-box', data);
+      //   })
+      //   .exec();
     },
     (msg) => {
       reclog('开始录音失败：' + msg, 1);
@@ -303,6 +304,7 @@ const recStop = () => {
     (aBuf, duration, mime) => {
       //全平台通用：aBuf是ArrayBuffer音频文件二进制数据，可以保存成文件或者发送给服务器
       //App中如果在Start参数中提供了stop_renderjs，renderjs中的函数会比这个函数先执行
+      console.log('结束录音 aBuf', aBuf);
 
       const recSet = (RecordApp.GetCurrentRecOrNull() || { set: { type: 'mp3' } }).set;
       reclog(
@@ -450,10 +452,28 @@ const tryClose_androidNotifyService = () => {
   }
 }
 
-.record-progress {
+.record-box {
   width: 100%;
-  height: calc(100vh - 265px);
+  height: calc(100vh - 264px);
   position: relative;
+  background: #ffffff;
+
+  .recwave-progress {
+    height: 40px;
+    width: 100%;
+    background: #999;
+    position: relative;
+    .recwave-progress-bar {
+      height: 40px;
+      background: #0b1;
+      position: absolute;
+    }
+    .recwave-progress-text {
+      padding-left: 50px;
+      line-height: 40px;
+      position: relative;
+    }
+  }
 
   .recwave-box {
     width: 100%;
@@ -462,7 +482,7 @@ const tryClose_androidNotifyService = () => {
     .recwave-SurferView,
     .recwave-SurferView-2x {
       width: 100%;
-      height: 200px;
+      height: 250px;
     }
   }
 

@@ -64,19 +64,38 @@ body {
   font-size: 20px;
 }
 
-.uni-navbar__header-btns-left {
-  .uni-navbar-btn-text {
-    uni-text {
-      font-size: 16px !important;
-    }
-  }
-}
-
 .ua__markdown {
   padding: 0 10px;
 }
 
 uni-button:after {
   border: none !important;
+}
+
+.uni-nav-bar-text,
+.uni-navbar-btn-text uni-text {
+  font-family: Avenir;
+  font-weight: bold;
+  font-size: 16px !important;
+}
+
+.uni-navbar__header-btns-left,
+.uni-navbar__header-btns-right {
+  width: fit-content !important;
+  font-family: Avenir;
+  font-weight: bold;
+  .back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+  .record-play-nav-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    font-size: 16px;
+  }
 }
 </style>

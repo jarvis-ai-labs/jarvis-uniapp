@@ -2,20 +2,19 @@
   <view class="container">
     <view class="container-box">
       <uni-nav-bar
-        :fixed="true"
+        shadow
+        fixed
+        status-bar
         :border="false"
         height="50px"
         background-color="#FFFFFF"
-        status-bar
-        left-icon="back"
-        leftText="文件"
         @clickLeft="handleClickLeft">
-        <!-- <block slot="left">
+        <template #left>
           <view class="back-btn">
-            <uni-icons type="back" size="30" color="#ffffff" />
+            <uni-icons type="back" size="20" color="#000000" />
             <text>文件</text>
           </view>
-        </block> -->
+        </template>
       </uni-nav-bar>
 
       <view class="file-detail-box">

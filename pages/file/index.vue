@@ -85,7 +85,7 @@ const handleSoundRecording = async () => {
       console.log('文件存储权限', isWriteStorageGranted == 1 ? '已获取授权' : '未获取授权');
 
       if (isRecordAudioGranted > 0 && isWriteStorageGranted > 0) {
-        uni.navigateTo({ url: '/pages/sound-recording/index' });
+        uni.navigateTo({ url: '/pages/record-sound/index' });
       } else {
         uni.showModal({
           title: '提示',
