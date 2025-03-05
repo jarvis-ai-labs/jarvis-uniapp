@@ -1,23 +1,17 @@
 <template>
   <view class="container">
-    <view class="container-box">
-      <uni-nav-bar
-        shadow
-        fixed
-        status-bar
-        :border="false"
-        height="50px"
-        background-color="#FFFFFF"
-        @clickLeft="handleClickLeft">
-        <template #left>
-          <view class="back-btn">
-            <uni-icons type="back" size="20" color="#000000" />
-            <text>文件</text>
-          </view>
-        </template>
-      </uni-nav-bar>
+    <uni-nav-bar
+      shadow
+      fixed
+      status-bar
+      :border="false"
+      height="50px"
+      left-icon="back"
+      left-text="文件"
+      @clickLeft="handleGoBack" />
 
-      <view class="file-detail-box">
+    <view class="container-box">
+      <view class="record-detail-box">
         <view class="tabs">
           <button
             @click="switchTab('transcription-results')"
@@ -27,19 +21,17 @@
           <button @click="switchTab('ai-assistant')" :class="{ active: currentTab === 'ai-assistant' }">AI助手</button>
         </view>
 
-        <template v-if="currentTab === 'transcription-results'">
-          <view class="file-item" v-if="fileDetail">
-            <view class="file-item-left">
-              <view class="left-top">{{ fileDetail.title }}</view>
-              <view class="left-bottom">
-                <view class="time">{{ fileDetail.total_duration }}</view>
-                <view class="time2">{{ fileDetail.recording_time }}</view>
-              </view>
+        <template v-if="currentTab === 'transcription-results' && recordInfo">
+          <view class="record-info">
+            <view class="file-name">{{ recordInfo.fileName }}</view>
+            <view class="record-time">
+              <view class="time">{{ recordInfo.duration }}</view>
+              <view class="time2">{{ recordInfo.startTime }}</view>
             </view>
           </view>
 
           <view class="transcription-box">
-            <view>{{ fileDetail.text_content }}</view>
+            <view>{{ recordInfo.recordText }}</view>
           </view>
         </template>
 
@@ -66,47 +58,40 @@
             </view>
           </view>
         </template>
-
-        <uni-popup ref="shareDom" background-color="#EBEBEB" borderRadius="20px 20px 0 0">
-          <view class="share-box">
-            <view class="title">分享</view>
-            <view class="share-list">
-              <view class="share-item" @click="handleExportWord()">
-                <img src="@/static/images/icon-word.png" alt="" />
-                <text>Word文件</text>
-              </view>
-              <view class="share-item" @click="handleExportTxt()">
-                <img src="@/static/images/icon-txt.png" alt="" />
-                <text>TXT文件</text>
-              </view>
-              <view class="share-item" @click="handleCopyText()">
-                <img src="@/static/images/icon-copy.png" alt="" />
-                <text>复制文字</text>
-              </view>
-            </view>
-          </view>
-        </uni-popup>
-        <!-- 分享示例 -->
-        <!-- <uni-popup ref="shareDom" type="share" safeArea backgroundColor="#fff">
-          <uni-popup-share></uni-popup-share>
-        </uni-popup> -->
       </view>
     </view>
+    <uni-popup ref="shareDom" background-color="#EBEBEB" borderRadius="20px 20px 0 0">
+      <view class="share-box">
+        <view class="title">分享</view>
+        <view class="share-list">
+          <view class="share-item" @click="handleExportWord()">
+            <image mode="aspectFill" src="/static/images/icon-word.png" />
+            <text>Word文件</text>
+          </view>
+          <view class="share-item" @click="handleExportTxt()">
+            <image mode="aspectFill" src="/static/images/icon-txt.png" />
+            <text>TXT文件</text>
+          </view>
+          <view class="share-item" @click="handleCopyText()">
+            <image mode="aspectFill" src="/static/images/icon-copy.png" />
+            <text>复制文字</text>
+          </view>
+        </view>
+      </view>
+    </uni-popup>
   </view>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
-import fileListData from '@/data/fileList.json';
 import { GetSupportedTasks, ProcessTextTask } from '@/api/api';
 import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
 
 const shareDom = ref(null);
-const id = ref(null);
 const currentTab = ref('transcription-results');
-const fileDetail = ref(null);
+const recordInfo = ref(null);
 const showRemainingTask = ref(true);
 const taskList = ref([]);
 const newTaskList = ref([]);
@@ -120,10 +105,14 @@ onLoad((options) => {
     return;
   }
 
-  id.value = options.id;
-  fileDetail.value = fileListData.find((item) => item.id == id.value);
-
-  getTaskList();
+  const recordList = uni.getStorageSync('recordList') || [];
+  if (recordList.length > 0) {
+    recordInfo.value = recordList.find((item) => item.startTimestamp == options.id);
+    console.log('当前录音文件', recordInfo.value);
+    if (recordInfo.value) {
+      getTaskList();
+    }
+  }
 });
 
 const getTaskList = async () => {
@@ -149,7 +138,7 @@ const processTask = async (item, isRegenerate = false) => {
   }
 
   try {
-    const res = await ProcessTextTask(item.name, fileDetail.value.text_content);
+    const res = await ProcessTextTask(item.name, recordInfo.value.text_content);
     console.log(item.name, res.data);
 
     const target = taskResult.value.find((result) => result.id === item.id);
@@ -200,7 +189,7 @@ const switchTab = (tab) => {
   }
 };
 
-const handleClickLeft = () => {
+const handleGoBack = () => {
   uni.switchTab({ url: '/pages/file/index' });
 };
 
@@ -285,10 +274,10 @@ const handleCopyText = () => {
 };
 
 // const parsedDialogs = computed(() => {
-//   if (!fileDetail.value?.text_content) return [];
+//   if (!recordInfo.value?.text_content) return [];
 
 //   const dialogs = [];
-//   const lines = fileDetail.value.text_content.split('。').filter((line) => line.trim() !== '');
+//   const lines = recordInfo.value.text_content.split('。').filter((line) => line.trim() !== '');
 //   console.log('lines', lines);
 
 //   lines.forEach((line) => {
@@ -305,200 +294,163 @@ const handleCopyText = () => {
 </script>
 
 <style lang="scss" scoped>
-.container {
-  .container-box {
-    padding-bottom: 20px;
-  }
-}
-
-.file-detail-box {
-  width: 95vw;
-  min-height: calc(100vh - 150px);
-  margin: 20px auto 0;
+.record-detail-box {
+  width: 100%;
+  min-height: calc(100vh - 125px);
   border-radius: 24px;
   background: #ffffff;
   box-shadow: 0 0 8px 2px rgba(140, 145, 151, 0.15);
+  padding: 10px;
+}
+.tabs {
+  width: 100%;
+  background: #f9fafa;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 10px;
+  margin-bottom: 10px;
+
+  uni-button:after {
+    border: none;
+  }
+
+  button {
+    width: 50%;
+    height: 40px;
+    background-color: #f9fafa;
+    font-family: Avenir;
+    font-size: 16px;
+    color: #616161;
+    &.active {
+      border-radius: 10px;
+      background: #ededed;
+      color: #2a2a2a;
+    }
+  }
+}
+
+.transcription-box {
+  background: #f9fafa;
+  border-radius: 20px;
   padding: 20px;
-  .tabs {
-    width: 100%;
-    background: #f9fafa;
+  font-family: Avenir;
+  font-weight: 300;
+  font-size: 14px;
+  color: #000;
+
+  .dialog-item {
+    margin-bottom: 5px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .dialog-speaker {
+      font-weight: bold;
+      color: #81b82f;
+    }
+  }
+}
+
+.btn-list {
+  .btn-item {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    border-radius: 10px;
-    margin-bottom: 20px;
-
-    uni-button:after {
-      border: none;
-    }
-
-    button {
-      width: 50%;
-      height: 40px;
-      background-color: #f9fafa;
-      font-family: Avenir;
-      font-size: 16px;
-      color: #616161;
-      &.active {
-        border-radius: 10px;
-        background: #ededed;
-        color: #2a2a2a;
-      }
-    }
-  }
-
-  .file-item {
-    background: #f9fafa;
-    border-radius: 20px;
-    padding: 20px;
-    margin-bottom: 20px;
-    .file-item-left {
-      .left-top {
-        font-family: Avenir;
-        font-size: 16px;
-        color: #000;
-        margin-bottom: 10px;
-      }
-      .left-bottom {
-        display: flex;
-        justify-content: space-between;
-        .time {
-          font-family: Avenir;
-          font-size: 14px;
-          color: #000;
-        }
-        .time2 {
-          font-family: Avenir;
-          font-size: 14px;
-          color: #afafb1;
-        }
-      }
-    }
-  }
-
-  .transcription-box {
-    background: #f9fafa;
-    border-radius: 20px;
-    padding: 20px;
-    font-family: Avenir;
-    font-weight: 300;
-    font-size: 14px;
-    color: #000;
-
-    .dialog-item {
-      margin-bottom: 5px;
-
-      &:last-child {
-        margin-bottom: 0;
-      }
-
-      .dialog-speaker {
-        font-weight: bold;
-        color: #81b82f;
-      }
-    }
-  }
-
-  .btn-list {
-    .btn-item {
-      display: flex;
-      align-items: center;
-      width: 100%;
-      height: 40px;
-      border-radius: 10px;
-      font-family: Avenir;
-      font-size: 16px;
-      color: #575757;
-      transition: background-color 0.3s ease;
-
-      &:active {
-        background-color: #f0f0f0;
-      }
-    }
-  }
-
-  .features {
-    background: #f9fafa;
-    border-radius: 18px;
-    margin-bottom: 20px;
-    .topbox {
-      padding: 10px;
-      border-bottom: 1px solid #dfe8f5;
-      .title {
-        font-family: Avenir;
-        font-weight: 300;
-        font-size: 16px;
-        color: #000000;
-        margin-bottom: 10px;
-      }
-      .text {
-        font-family: Avenir;
-        font-weight: 300;
-        font-size: 12px;
-        color: #616161;
-      }
-    }
-    .bottombox {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-family: Avenir;
-      font-size: 14px;
-      font-weight: 300;
-      color: #007aff;
-      padding: 10px;
-    }
-  }
-
-  .btn-generate {
-    width: 120px;
+    width: 100%;
     height: 40px;
-    background: #dae7f2;
-    border-radius: 20px;
+    border-radius: 10px;
     font-family: Avenir;
-    font-weight: 300;
     font-size: 16px;
-    color: #004685;
+    color: #575757;
     transition: background-color 0.3s ease;
 
     &:active {
-      background-color: #c0d4e5;
+      background-color: #f0f0f0;
     }
   }
+}
 
-  .share-box {
-    padding: 20px;
+.features {
+  background: #f9fafa;
+  border-radius: 18px;
+  margin-bottom: 20px;
+  .topbox {
+    padding: 10px;
+    border-bottom: 1px solid #dfe8f5;
     .title {
       font-family: Avenir;
       font-weight: 300;
-      font-size: 20px;
-      color: #222222;
-      margin-bottom: 20px;
+      font-size: 16px;
+      color: #000000;
+      margin-bottom: 10px;
     }
-    .share-list {
-      width: 100%;
-      border-radius: 18px;
-      background: #ffffff;
+    .text {
+      font-family: Avenir;
+      font-weight: 300;
+      font-size: 12px;
+      color: #616161;
+    }
+  }
+  .bottombox {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: Avenir;
+    font-size: 14px;
+    font-weight: 300;
+    color: #007aff;
+    padding: 10px;
+  }
+}
+
+.btn-generate {
+  width: 120px;
+  height: 40px;
+  background: #dae7f2;
+  border-radius: 20px;
+  font-family: Avenir;
+  font-weight: 300;
+  font-size: 16px;
+  color: #004685;
+  transition: background-color 0.3s ease;
+
+  &:active {
+    background-color: #c0d4e5;
+  }
+}
+.share-box {
+  padding: 20px;
+  .title {
+    font-family: Avenir;
+    font-weight: 300;
+    font-size: 20px;
+    color: #222222;
+    margin-bottom: 20px;
+  }
+  .share-list {
+    width: 100%;
+    border-radius: 18px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    .share-item {
+      padding: 20px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      .share-item {
-        padding: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        img {
-          width: 30px;
-          height: 30px;
-          margin-bottom: 10px;
-        }
-        text {
-          font-family: Avenir;
-          font-weight: 300;
-          font-size: 14px;
-          color: #555555;
-        }
+      justify-content: center;
+      flex-direction: column;
+      image {
+        width: 30px;
+        height: 30px;
+        margin-bottom: 10px;
+      }
+      text {
+        font-family: Avenir;
+        font-weight: 300;
+        font-size: 14px;
+        color: #555555;
       }
     }
   }

@@ -1,86 +1,60 @@
 <template>
   <view>
     <view class="container">
+      <uni-nav-bar shadow fixed status-bar :border="false" height="50px" title="正在录音" />
+
       <view class="container-box">
-        <uni-nav-bar
-          :fixed="true"
-          :border="false"
-          height="50px"
-          background-color="#FFFFFF"
-          status-bar
-          title="正在录音" />
-
-        <view class="record-file">
-          <view class="record-file-name">
-            {{ fileName }}
-          </view>
-          <view class="record-file-time">
-            {{ startTime }}
-          </view>
-        </view>
-
-        <view class="record-box">
-          <!-- 可视化绘制 -->
-          <view class="recwave-box">
-            <view class="recwave-progress">
-              <view class="recwave-progress-bar" :style="{ width: recpowerx + '%' }"></view>
-              <view class="recwave-progress-text">{{ recpowert }}</view>
-            </view>
-
-            <canvas type="2d" class="recwave-WaveView"></canvas>
-
-            <view>
-              <TestPlayer ref="player" />
+        <view class="record-sound-box">
+          <view class="record-info">
+            <view class="file-name">{{ fileName }}</view>
+            <view class="record-time">
+              <view class="time2">{{ formatDate(startTimestamp) }}</view>
             </view>
           </view>
-          <view class="record-time" v-if="recpowertTime">
-            <text>{{ recpowertTime }}</text>
-          </view>
-        </view>
 
-        <view class="record-control">
-          <button class="start-pause-btn" @click="handleStartPause">
-            <uni-icons
-              custom-prefix="iconfont"
-              :type="isRecording ? 'icon-pause' : 'icon-mic'"
-              size="30"
-              color="#ffffff" />
-          </button>
-          <button class="stop-btn" @click="recStop">
-            <uni-icons custom-prefix="iconfont" type="icon-stop" size="30" color="#ffffff" />
-          </button>
+          <view class="record-box">
+            <!-- 可视化绘制 -->
+            <view class="recwave-box">
+              <view class="recwave-progress">
+                <view class="recwave-progress-bar" :style="{ width: recpowerx + '%' }"></view>
+                <view class="recwave-progress-text">{{ recpowert }}</view>
+              </view>
+
+              <canvas type="2d" class="recwave-WaveView"></canvas>
+            </view>
+            <view class="record-time">
+              <text>{{ recpowertTime }}</text>
+            </view>
+          </view>
+
+          <view class="record-control">
+            <button class="start-pause-btn" @click="handleStartPause">
+              <uni-icons
+                custom-prefix="iconfont"
+                :type="isRecording ? 'icon-pause' : 'icon-mic'"
+                size="30"
+                color="#ffffff" />
+            </button>
+            <button class="stop-btn" @click="recStop">
+              <uni-icons custom-prefix="iconfont" type="icon-stop" size="20" color="#ffffff" />
+            </button>
+          </view>
         </view>
       </view>
     </view>
 
-    <view>
-      <!-- 控制按钮 -->
-      <!-- <view style="display: flex; padding: 10px 0">
-        <button size="mini" @click="recReq">请求录音权限</button>
-        <button size="mini" type="primary" @click="recStart">开始录音</button>
-        <button size="mini" @click="recStop">停止录音</button>
-      </view>
-      <view style="display: flex; padding: 10px 0">
-        <button size="mini" type="primary" @click="recPause">暂停</button>
-        <button size="mini" @click="recResume">继续</button>
-        <button size="mini" type="default" @click="recStopX">停止(仅清理)</button>
-      </view> -->
-
-      <!-- 日志输出 -->
-      <view style="padding-top: 10px">
-        <view v-for="obj in reclogs" :key="obj.idx" style="border-bottom: 1px dashed #666; padding: 5px 0">
-          <view :style="{ color: obj.color == 1 ? 'red' : obj.color == 2 ? 'green' : obj.color }">
-            {{ obj.txt }}
-          </view>
+    <!-- 日志输出 -->
+    <!-- <view style="padding-top: 10px">
+      <view v-for="obj in reclogs" :key="obj.idx" style="border-bottom: 1px dashed #666; padding: 5px 0">
+        <view :style="{ color: obj.color == 1 ? 'red' : obj.color == 2 ? 'green' : obj.color }">
+          {{ obj.txt }}
         </view>
       </view>
-    </view>
+    </view> -->
   </view>
 </template>
 
 <script setup>
-import TestPlayer from './test_player___.vue'; //手撸的一个跨平台播放器
-
 /** 先引入Recorder （ 需先 npm install recorder-core ）**/
 import Recorder from 'recorder-core';
 
@@ -105,12 +79,22 @@ import 'recorder-core/src/app-support/app-miniProgram-wx-support.js';
 // #endif
 
 import { ref, getCurrentInstance, onMounted, onUnmounted } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
-import { formatDate } from '@/utils';
+import { onShow, onBackPress } from '@dcloudio/uni-app';
+import { formatDate, getAudioToTextExample } from '@/utils';
 
-const now = Date.now();
-const fileName = ref('Jarvis_录音_' + formatDate(now).split(' ')[0] + '_' + formatDate(now).split(' ')[1]);
-const startTime = ref(formatDate(now));
+const startTimestamp = Date.now();
+const formatFileName = (timestamp) => {
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hour = String(date.getHours()).padStart(2, '0');
+  const minute = String(date.getMinutes()).padStart(2, '0');
+
+  return `Jarvis_录音_${year}年${month}月${day}日${hour}时${minute}分`;
+};
+const fileName = formatFileName(startTimestamp);
+
 const isRecording = ref(false);
 const recpowerx = ref(0);
 const recpowert = ref('');
@@ -146,6 +130,14 @@ const formatTime = (ms, showSS) => {
   if (showSS) v += '″' + ('00' + ss).substr(-3);
   return v;
 };
+
+onBackPress((options) => {
+  if (options.from == 'backbutton') {
+    return true;
+  } else if (options.from == 'navigateBack') {
+    return false;
+  }
+});
 
 onMounted(() => {
   reclog('onMounted');
@@ -198,8 +190,6 @@ const recReq = () => {
 };
 
 const recStart = () => {
-  vue3This.$refs.player.setPlayBytes(null);
-
   reclog('正在打开...');
   RecordApp.UniWebViewActivate(vue3This);
   tryStart_androidNotifyService();
@@ -264,14 +254,6 @@ const recStart = () => {
           vue3This.waveView = Recorder.WaveView({ compatibleCanvas: canvas1, width: 300, height: 250 });
         }
       );
-
-      // uni
-      //   .createSelectorQuery()
-      //   .selectAll('.record-box')
-      //   .boundingClientRect((data) => {
-      //     console.log('record-box', data);
-      //   })
-      //   .exec();
     },
     (msg) => {
       reclog('开始录音失败：' + msg, 1);
@@ -302,10 +284,6 @@ const recStop = () => {
 
   RecordApp.Stop(
     (aBuf, duration, mime) => {
-      //全平台通用：aBuf是ArrayBuffer音频文件二进制数据，可以保存成文件或者发送给服务器
-      //App中如果在Start参数中提供了stop_renderjs，renderjs中的函数会比这个函数先执行
-      console.log('结束录音 aBuf', aBuf);
-
       const recSet = (RecordApp.GetCurrentRecOrNull() || { set: { type: 'mp3' } }).set;
       reclog(
         '已录制[' +
@@ -322,10 +300,54 @@ const recStop = () => {
         2
       );
 
-      const aBuf_renderjs = 'this.audioData';
+      // 保存录音文件到本地
+      RecordApp.UniSaveLocalFile(
+        fileName + '.mp3',
+        aBuf,
+        (savePath) => {
+          console.log('保存录音文件成功:', savePath);
 
-      //播放，部分格式会转码成wav播放
-      vue3This.$refs.player.setPlayBytes(aBuf, aBuf_renderjs, duration, mime, recSet, Recorder);
+          // 使用 uni.saveFile 将临时文件转为永久文件
+          uni.saveFile({
+            tempFilePath: savePath,
+            success: (res) => {
+              const savedFilePath = res.savedFilePath;
+              console.log('永久保存文件成功:', savedFilePath);
+
+              const recordInfo = {
+                fileName,
+                startTimestamp,
+                startTime: formatDate(startTimestamp),
+                duration: formatTime(duration, 0),
+                filePath: savedFilePath,
+                tempFilePath: savePath,
+                fileSize: aBuf.byteLength,
+                mime,
+                recordText: getAudioToTextExample()
+              };
+
+              // 获取已有的录音列表
+              let recordList = uni.getStorageSync('recordList') || [];
+              recordList.unshift(recordInfo);
+              uni.setStorageSync('recordList', recordList);
+              console.log('本地录音列表', recordList);
+
+              // 跳转到播放页面
+              uni.navigateTo({
+                url: '/pages/record-play/index?id=' + startTimestamp
+              });
+            },
+            fail: (err) => {
+              console.error('永久保存文件失败:', err);
+              uni.showToast({ title: '保存录音失败', icon: 'error' });
+            }
+          });
+        },
+        (errMsg) => {
+          console.error('保存录音文件失败:', errMsg);
+          uni.showToast({ title: '保存录音失败', icon: 'error' });
+        }
+      );
     },
     (msg) => {
       reclog('结束录音失败：' + msg, 1);
@@ -333,17 +355,16 @@ const recStop = () => {
   );
 };
 
-const recStopX = () => {
-  isRecording.value = false;
-  tryClose_androidNotifyService();
-
-  RecordApp.Stop(
-    null, //success传null就只会清理资源，不会进行转码
-    (msg) => {
-      reclog('已清理，错误信息：' + msg);
-    }
-  );
-};
+// const recStopX = () => {
+//   isRecording.value = false;
+//   tryClose_androidNotifyService();
+//   RecordApp.Stop(
+//     null, //success传null就只会清理资源，不会进行转码
+//     (msg) => {
+//       reclog('已清理，错误信息：' + msg);
+//     }
+//   );
+// };
 
 const tryStart_androidNotifyService = () => {
   if (RecordApp.UniIsApp()) {
@@ -427,29 +448,16 @@ const tryClose_androidNotifyService = () => {
 <!-- #endif -->
 
 <style lang="scss" scoped>
-.record-file {
-  position: relative;
+.record-sound-box {
   width: 100%;
-  height: 80px;
-  background: #f9fafa;
+  height: calc(100vh - 125px);
+  border-radius: 24px;
+  background: #ffffff;
   box-shadow: 0 0 8px 2px rgba(140, 145, 151, 0.15);
-  padding: 0 20px;
-  border-top: 1px solid #dae7f2;
-  border-bottom: 1px solid #dae7f2;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-
-  .record-file-name {
-    font-family: Avenir;
-    font-size: 16px;
-    color: #000;
-  }
-  .record-file-time {
-    font-family: Avenir;
-    font-size: 12px;
-    color: #afafb1;
-  }
+  justify-content: space-between;
 }
 
 .record-box {
@@ -461,11 +469,11 @@ const tryClose_androidNotifyService = () => {
   .recwave-progress {
     height: 40px;
     width: 100%;
-    background: #999;
+    background: #f9fafa;
     position: relative;
     .recwave-progress-bar {
       height: 40px;
-      background: #0b1;
+      background: green;
       position: absolute;
     }
     .recwave-progress-text {
@@ -506,10 +514,12 @@ const tryClose_androidNotifyService = () => {
 .record-control {
   width: 100%;
   height: 100px;
-  background-color: #f9fafa;
+  background: #edf2f8;
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
+
   .fa-solid {
     font-size: 24px;
     color: #ffffff;
@@ -519,7 +529,7 @@ const tryClose_androidNotifyService = () => {
     width: 60px;
     height: 60px;
     border-radius: 50%;
-    background-color: #303e89;
+    background-color: #5fa9ff;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -527,15 +537,15 @@ const tryClose_androidNotifyService = () => {
   }
 
   .stop-btn {
-    width: 40px;
-    height: 40px;
+    width: 30px;
+    height: 30px;
     border-radius: 10px;
-    background-color: #303e89;
+    background-color: #5fa9ff;
     display: flex;
     align-items: center;
     justify-content: center;
     position: absolute;
-    right: 30px;
+    right: 60px;
   }
 }
 </style>

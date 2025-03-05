@@ -1,8 +1,7 @@
 <template>
   <view class="container">
-    <view class="container-box">
-      <uni-nav-bar :fixed="true" :border="false" height="50px" background-color="#FFFFFF" status-bar title="我的" />
-    </view>
+    <uni-nav-bar shadow fixed status-bar :border="false" height="50px" title="我的" />
+    <view class="container-box"> </view>
   </view>
 </template>
 

@@ -4,21 +4,26 @@
 }
 
 .iconfont {
-  font-family: 'iconfont' !important;
+  font-family: "iconfont" !important;
   font-size: 16px;
   font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+.icon-play:before {
+  content: "\e64f";
+}
+
 .icon-pause:before {
-  content: '\e66c';
+  content: "\e66c";
 }
 
 .icon-stop:before {
-  content: '\e71e';
+  content: "\e71e";
 }
 
 .icon-mic:before {
-  content: '\e68e';
+  content: "\e68e";
 }
+

@@ -1,7 +1,7 @@
 <template>
   <view class="container">
     <view class="container-box">
-      <uni-nav-bar :fixed="true" :border="false" height="50px" background-color="#FFFFFF" status-bar title="正在录音" />
+      <uni-nav-bar shadow fixed status-bar :border="false" height="50px" title="正在录音" />
 
       <view class="record-file">
         <view class="record-file-name">

@@ -19,7 +19,7 @@
       }
     },
     {
-      "path": "pages/file-detail/index",
+      "path": "pages/record-detail/index",
       "style": {
         "navigationStyle": "custom"
       }
@@ -32,6 +32,12 @@
     },
     {
       "path": "pages/record-play/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/audio-to-text/index",
       "style": {
         "navigationStyle": "custom"
       }

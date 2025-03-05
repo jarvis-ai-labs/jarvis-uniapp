@@ -1,29 +1,29 @@
 <template>
   <view class="container">
-    <view class="container-box">
-      <uni-nav-bar
-        :fixed="true"
-        :border="false"
-        height="50px"
-        background-color="#FFFFFF"
-        status-bar
-        title="文件"
-        left-icon="list"
-        right-icon="search"
-        @clickLeft="handleClickLeft"
-        @clickRight="handleClickRight" />
+    <uni-nav-bar
+      shadow
+      fixed
+      status-bar
+      :border="false"
+      height="50px"
+      title="文件"
+      left-icon="list"
+      right-icon="search"
+      @clickLeft="handleClickLeft"
+      @clickRight="handleClickRight" />
 
-      <view class="file-list">
-        <view class="file-item" v-for="item in fileList" :key="item.id" @click="handleFileItem(item)">
+    <view class="container-box">
+      <view class="file-list" v-if="recordList.length > 0">
+        <view class="file-item" v-for="item in recordList" :key="item.startTimestamp" @click="toRecordPlayPage(item)">
           <view class="file-item-left">
-            <view class="left-top">{{ item.title }}</view>
+            <view class="left-top">{{ item.fileName }}</view>
             <view class="left-bottom">
-              <view class="time">{{ item.total_duration }}</view>
-              <view class="time2">{{ item.recording_time }}</view>
+              <view class="time">{{ item.duration }}</view>
+              <view class="time2">{{ item.startTime }}</view>
             </view>
           </view>
           <view class="file-item-right">
-            <button class="file-item-button">{{ item.buttonText }}</button>
+            <button class="file-item-button" @click.stop="toFileDetailPage(item)">文字</button>
           </view>
         </view>
       </view>
@@ -48,17 +48,28 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
 import permision from '@/js_sdk/wa-permission/permission.js';
 
-import fileListData from '@/data/fileList.json';
-
-const fileList = ref(fileListData);
+const recordList = ref([]);
 // const alertDialog = ref(null);
 
-const handleFileItem = (item) => {
+onShow(() => {
+  // uni.removeStorageSync('recordList');
+  recordList.value = uni.getStorageSync('recordList') || [];
+  console.log('本地录音列表', recordList.value);
+});
+
+const toRecordPlayPage = (item) => {
   uni.navigateTo({
-    url: '/pages/file-detail/index?id=' + item.id
+    url: '/pages/record-play/index?id=' + item.startTimestamp
+  });
+};
+
+const toFileDetailPage = (item) => {
+  uni.navigateTo({
+    url: '/pages/record-detail/index?id=' + item.startTimestamp
   });
 };
 
@@ -120,9 +131,7 @@ const handleSoundRecording = async () => {
 
 <style lang="scss" scoped>
 .file-list {
-  position: relative;
-  width: 95vw;
-  margin: 20px auto 0;
+  width: 100%;
   border-radius: 24px;
   background: #ffffff;
   box-shadow: 0 0 8px 2px rgba(140, 145, 151, 0.15);
