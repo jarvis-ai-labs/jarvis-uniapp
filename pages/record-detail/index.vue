@@ -138,7 +138,7 @@ const processTask = async (item, isRegenerate = false) => {
   }
 
   try {
-    const res = await ProcessTextTask(item.name, recordInfo.value.text_content);
+    const res = await ProcessTextTask(item.name, recordInfo.value.recordText);
     console.log(item.name, res.data);
 
     const target = taskResult.value.find((result) => result.id === item.id);
@@ -272,25 +272,6 @@ const handleCopyText = () => {
     }
   });
 };
-
-// const parsedDialogs = computed(() => {
-//   if (!recordInfo.value?.text_content) return [];
-
-//   const dialogs = [];
-//   const lines = recordInfo.value.text_content.split('。').filter((line) => line.trim() !== '');
-//   console.log('lines', lines);
-
-//   lines.forEach((line) => {
-//     const colonIndex = line.indexOf('：');
-//     if (colonIndex > -1) {
-//       const speaker = line.slice(0, colonIndex);
-//       const content = line.slice(colonIndex + 1).trim();
-//       dialogs.push({ speaker, content });
-//     }
-//   });
-
-//   return dialogs;
-// });
 </script>
 
 <style lang="scss" scoped>

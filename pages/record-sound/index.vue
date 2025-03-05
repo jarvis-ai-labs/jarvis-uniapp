@@ -91,7 +91,7 @@ const formatFileName = (timestamp) => {
   const hour = String(date.getHours()).padStart(2, '0');
   const minute = String(date.getMinutes()).padStart(2, '0');
 
-  return `Jarvis_录音_${year}年${month}月${day}日${hour}时${minute}分`;
+  return `Jarvis-录音-${year}年${month}月${day}日${hour}时${minute}分`;
 };
 const fileName = formatFileName(startTimestamp);
 
