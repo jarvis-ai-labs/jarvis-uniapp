@@ -11,7 +11,7 @@
       @clickLeft="handleGoBack" />
 
     <view class="container-box">
-      <button class="audio-to-text-btn">转文字</button>
+      <button class="audio-to-text-btn" @click="handleAudioToText">转文字</button>
     </view>
   </view>
 </template>
@@ -39,7 +39,22 @@ onLoad((options) => {
 });
 
 const handleGoBack = () => {
-  uni.switchTab({ url: '/pages/file/index' });
+  uni.navigateBack();
+};
+
+const handleAudioToText = () => {
+  console.log('转文字', recordInfo.value.arrayBuffer);
+
+  // uni.request({
+  //   url: '上传接口地址',
+  //   method: 'POST',
+  //   header: { 'content-type': 'application/x-www-form-urlencoded' },
+  //   data: {
+  //     audio: uni.arrayBufferToBase64(arrayBuffer)
+  //   },
+  //   success: (res) => {},
+  //   fail: (err) => {}
+  // });
 };
 </script>
 

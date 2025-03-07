@@ -82,6 +82,8 @@ import { ref, getCurrentInstance, onMounted, onUnmounted } from 'vue';
 import { onShow, onBackPress } from '@dcloudio/uni-app';
 import { formatDate, getAudioToTextExample } from '@/utils';
 
+import permision from '@/js_sdk/wa-permission/permission.js';
+
 const startTimestamp = Date.now();
 const formatFileName = (timestamp) => {
   const date = new Date(timestamp);
@@ -152,10 +154,10 @@ onUnmounted(() => {
 
 onShow(() => {
   reclog('onShow');
-  if (vue3This.isMounted) {
-    RecordApp.UniPageOnShow(vue3This);
-    recReq();
-  } //onShow可能比mounted先执行，页面可能还未准备好
+  // if (vue3This.isMounted) {
+  //   RecordApp.UniPageOnShow(vue3This);
+  //   recReq();
+  // }
 });
 
 const recReq = () => {
@@ -180,13 +182,39 @@ const recReq = () => {
       recStart();
     },
     (msg, isUserNotAllow) => {
+      console.log('msg, isUserNotAllow', msg, isUserNotAllow);
       if (isUserNotAllow) {
         //用户拒绝了录音权限
         //这里你应当编写代码进行引导用户给录音权限，不同平台分别进行编写
+        openPermissionSetting();
       }
       reclog((isUserNotAllow ? 'isUserNotAllow,' : '') + '请求录音权限失败：' + msg, 1);
     }
   );
+};
+
+const openPermissionSetting = () => {
+  console.log('uniPlatform', uni.getSystemInfoSync().uniPlatform);
+  console.log('platform', uni.getSystemInfoSync().platform);
+
+  if (uni.getSystemInfoSync().uniPlatform === 'app') {
+    if (uni.getSystemInfoSync().platform === 'android') {
+      uni.showModal({
+        title: '提示',
+        content: '需要麦克风权限，请前往设置手动开启',
+        success: function (res) {
+          if (res.confirm) {
+            permision.gotoAppPermissionSetting();
+          } else if (res.cancel) {
+            uni.switchTab({ url: '/pages/file/index' });
+          }
+        }
+      });
+    } else if (uni.getSystemInfoSync().platform === 'ios') {
+      permision.judgeIosPermission('record');
+    }
+  } else if (uni.getSystemInfoSync().uniPlatform === 'web') {
+  }
 };
 
 const recStart = () => {
@@ -283,7 +311,7 @@ const recStop = () => {
   tryClose_androidNotifyService();
 
   RecordApp.Stop(
-    (aBuf, duration, mime) => {
+    (arrayBuffer, duration, mime) => {
       const recSet = (RecordApp.GetCurrentRecOrNull() || { set: { type: 'mp3' } }).set;
       reclog(
         '已录制[' +
@@ -291,7 +319,7 @@ const recStop = () => {
           ']：' +
           formatTime(duration, 1) +
           ' ' +
-          aBuf.byteLength +
+          arrayBuffer.byteLength +
           '字节 ' +
           recSet.sampleRate +
           'hz ' +
@@ -300,12 +328,14 @@ const recStop = () => {
         2
       );
 
-      // 保存录音文件到本地
+      // #ifdef APP
+      //App中直接将二进制数据保存到本地文件，然后再上传
       RecordApp.UniSaveLocalFile(
         fileName + '.mp3',
-        aBuf,
+        arrayBuffer,
         (savePath) => {
-          console.log('保存录音文件成功:', savePath);
+          console.log('保存录音文件成功: savePath', savePath);
+          console.log('保存录音文件成功: arrayBuffer', arrayBuffer);
 
           // 使用 uni.saveFile 将临时文件转为永久文件
           uni.saveFile({
@@ -321,7 +351,8 @@ const recStop = () => {
                 duration: formatTime(duration, 0),
                 filePath: savedFilePath,
                 tempFilePath: savePath,
-                fileSize: aBuf.byteLength,
+                fileSize: arrayBuffer.byteLength,
+                arrayBuffer,
                 mime,
                 recordText: getAudioToTextExample()
               };
@@ -348,6 +379,19 @@ const recStop = () => {
           uni.showToast({ title: '保存录音失败', icon: 'error' });
         }
       );
+      // #endif
+
+      // #ifdef H5
+      //H5中直接使用浏览器提供的File接口构造一个文件
+      // uni.uploadFile({
+      //   url: '上传接口地址',
+      //   file: new File([arrayBuffer], 'recorder.mp3'),
+      //   name: 'audio',
+      //   formData: {},
+      //   success: (res) => {},
+      //   fail: (err) => {}
+      // });
+      // #endif
     },
     (msg) => {
       reclog('结束录音失败：' + msg, 1);

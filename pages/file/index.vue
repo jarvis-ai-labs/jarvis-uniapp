@@ -14,18 +14,32 @@
 
     <view class="container-box">
       <view class="file-list" v-if="recordList.length > 0">
-        <view class="file-item" v-for="item in recordList" :key="item.startTimestamp" @click="toRecordPlayPage(item)">
-          <view class="file-item-left">
-            <view class="left-top">{{ item.fileName }}</view>
-            <view class="left-bottom">
-              <view class="time">{{ item.duration }}</view>
-              <view class="time2">{{ item.startTime }}</view>
+        <uni-swipe-action>
+          <uni-swipe-action-item v-for="item in recordList" :key="item.startTimestamp">
+            <view class="file-item" @click="toRecordPlayPage(item)">
+              <view class="file-item-left">
+                <view class="left-top">{{ item.fileName }}</view>
+                <view class="left-bottom">
+                  <view class="time">{{ item.duration }}</view>
+                  <view class="time2">{{ item.startTime }}</view>
+                </view>
+              </view>
+              <view class="file-item-right">
+                <button class="file-item-button" @click.stop="toFileDetailPage(item)">文字</button>
+              </view>
             </view>
-          </view>
-          <view class="file-item-right">
-            <button class="file-item-button" @click.stop="toFileDetailPage(item)">文字</button>
-          </view>
-        </view>
+
+            <template #right>
+              <view class="more-button-box">
+                <!-- <button class="more-button more-button-1">
+                  <uni-icons type="more-filled" size="20" color="#000000" />
+                </button> -->
+                <button class="more-button more-button-2" @click="handleRename(item)">重命名</button>
+                <button class="more-button more-button-3" @click="handleDelete(item)">删除</button>
+              </view>
+            </template>
+          </uni-swipe-action-item>
+        </uni-swipe-action>
       </view>
 
       <button class="sound-recording-btn" @click="handleSoundRecording">
@@ -33,16 +47,26 @@
       </button>
 
       <!-- 提示窗示例 -->
-      <!-- <uni-popup ref="alertDialog" type="dialog">
+      <uni-popup ref="deleteDialog" type="dialog">
         <uni-popup-dialog
-          type="warn"
-          cancelText="关闭"
-          confirmText="同意"
-          title="通知"
-          content="欢迎使用 uni-popup!"
-          @confirm="dialogConfirm"
-          @close="dialogClose"></uni-popup-dialog>
-      </uni-popup> -->
+          type="info"
+          title="删除"
+          cancelText="取消"
+          confirmText="确定"
+          content="确定删除该录音吗？"
+          @confirm="deleteDialogConfirm"
+          @close="deleteDialogClose"></uni-popup-dialog>
+      </uni-popup>
+
+      <uni-popup ref="renameDialog" type="dialog">
+        <uni-popup-dialog
+          mode="input"
+          title="重命名"
+          placeholder="请输入新的文件名"
+          v-model="renameInput"
+          @confirm="renameDialogConfirm"
+          @close="renameDialogClose"></uni-popup-dialog>
+      </uni-popup>
     </view>
   </view>
 </template>
@@ -50,10 +74,12 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
-import permision from '@/js_sdk/wa-permission/permission.js';
 
 const recordList = ref([]);
-// const alertDialog = ref(null);
+const dialogInfo = ref(null);
+const deleteDialog = ref(null);
+const renameDialog = ref(null);
+const renameInput = ref('');
 
 onShow(() => {
   // uni.removeStorageSync('recordList');
@@ -73,6 +99,42 @@ const toFileDetailPage = (item) => {
   });
 };
 
+const handleRename = (item) => {
+  dialogInfo.value = item;
+  renameDialog.value.open();
+};
+
+const handleDelete = (item) => {
+  dialogInfo.value = item;
+  deleteDialog.value.open();
+};
+
+const renameDialogConfirm = () => {
+  if (!renameInput.value.trim()) return;
+  recordList.value = recordList.value.map((record) => {
+    if (record.startTimestamp === dialogInfo.value.startTimestamp) {
+      record.fileName = renameInput.value;
+    }
+    return record;
+  });
+  uni.setStorageSync('recordList', recordList.value);
+  renameDialog.value.close();
+};
+
+const renameDialogClose = () => {
+  renameDialog.value.close();
+};
+
+const deleteDialogConfirm = () => {
+  recordList.value = recordList.value.filter((record) => record.startTimestamp !== dialogInfo.value.startTimestamp);
+  uni.setStorageSync('recordList', recordList.value);
+  deleteDialog.value.close();
+};
+
+const deleteDialogClose = () => {
+  deleteDialog.value.close();
+};
+
 const handleClickLeft = () => {
   console.log('点击左侧按钮');
 };
@@ -81,43 +143,8 @@ const handleClickRight = () => {
   console.log('点击右侧按钮');
 };
 
-const handleSoundRecording = async () => {
-  switch (uni.getSystemInfoSync().platform) {
-    case 'android':
-      const isRecordAudioGranted = await permision.requestAndroidPermission('android.permission.RECORD_AUDIO');
-      console.log('录音权限', isRecordAudioGranted == 1 ? '已获取授权' : '未获取授权');
-
-      // const isWriteStorageGranted = await permision.requestAndroidPermission(
-      //   'android.permission.WRITE_EXTERNAL_STORAGE'
-      // );
-      // 1	已获取授权
-      // 0	未获取授权
-      // -1	被永久拒绝授权
-      // console.log('文件存储权限', isWriteStorageGranted == 1 ? '已获取授权' : '未获取授权');
-
-      if (isRecordAudioGranted > 0) {
-        uni.navigateTo({ url: '/pages/record-sound/index' });
-      } else {
-        uni.showModal({
-          title: '提示',
-          content: '录音功能需要录音和文件存储权限，请前往设置手动开启',
-          success: function (res) {
-            if (res.confirm) {
-              console.log('用户点击确定');
-              permision.gotoAppPermissionSetting();
-            } else if (res.cancel) {
-              console.log('用户点击取消');
-            }
-          }
-        });
-      }
-      break;
-
-    case 'ios':
-      permision.judgeIosPermission('record');
-
-      break;
-  }
+const handleSoundRecording = () => {
+  uni.navigateTo({ url: '/pages/record-sound/index' });
 };
 
 // const dialogConfirm = () => {
@@ -146,7 +173,7 @@ const handleSoundRecording = async () => {
       border-bottom: none;
     }
     .file-item-left {
-      width: 70%;
+      width: calc(100% - 80px);
       .left-top {
         font-family: Avenir;
         font-size: 16px;
@@ -169,17 +196,52 @@ const handleSoundRecording = async () => {
       }
     }
     .file-item-right {
-      width: 20%;
       .file-item-button {
+        width: 60px;
+        height: 40px;
         background: #edf0f7;
         border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         font-family: Avenir;
-        font-size: 14px;
+        font-size: 16px;
         color: #303e89;
       }
     }
   }
 }
+
+.more-button-box {
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  .more-button {
+    width: 80px;
+    height: 40px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Avenir;
+    font-size: 16px;
+    margin-left: 10px;
+    &.more-button-1 {
+      background: #efefef;
+      color: #595959;
+    }
+    &.more-button-2 {
+      background: #a5e9ff;
+      color: #004685;
+    }
+    &.more-button-3 {
+      background: #ed9672;
+      color: #852204;
+    }
+  }
+}
+
 .sound-recording-btn {
   width: 60px;
   height: 60px;

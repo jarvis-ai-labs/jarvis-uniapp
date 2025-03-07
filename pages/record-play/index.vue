@@ -9,13 +9,13 @@
       left-icon="back"
       left-text="文件"
       @clickLeft="handleGoBack"
-      right-width="200px">
+      right-width="100px">
       <template #right>
         <view class="record-play-nav-bar">
           <text @click="toAudioToTextPage">转文字</text>
-          <text>分享</text>
-          <uni-icons type="more-filled" size="20" color="#000000" />
-          <text>AI</text>
+          <!-- <text>分享</text> -->
+          <!-- <uni-icons type="more-filled" size="20" color="#000000" /> -->
+          <text @click="toAiPage">AI</text>
         </view>
       </template>
     </uni-nav-bar>
@@ -218,6 +218,12 @@ const handleGoBack = () => {
 const toAudioToTextPage = () => {
   uni.navigateTo({
     url: '/pages/audio-to-text/index?id=' + recordInfo.value.startTimestamp
+  });
+};
+
+const toAiPage = () => {
+  uni.navigateTo({
+    url: '/pages/record-detail/index?id=' + recordInfo.value.startTimestamp
   });
 };
 </script>
