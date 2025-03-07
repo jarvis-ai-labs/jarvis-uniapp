@@ -95,12 +95,6 @@ onBackPress((options) => {
   }
 });
 
-onMounted(() => {
-  if (recordInfo.value) {
-    initAudioPlayer();
-  }
-});
-
 onUnmounted(() => {
   if (audioContext.value) {
     audioContext.value.destroy();
@@ -108,10 +102,12 @@ onUnmounted(() => {
 });
 
 const initAudioPlayer = () => {
-  if (!recordInfo.value?.filePath) {
-    console.error('无效的文件路径');
-    return;
-  }
+  // if (recordInfo.value.audioBase64) {
+  //   // 将 Base64 转回 ArrayBuffer
+  //   const arrayBuffer = uni.base64ToArrayBuffer(recordInfo.value.audioBase64);
+  //   console.log('恢复的音频数据大小:', arrayBuffer.byteLength);
+  //   // 使用 arrayBuffer...
+  // }
 
   audioContext.value = uni.createInnerAudioContext();
 

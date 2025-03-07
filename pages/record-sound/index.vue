@@ -329,15 +329,15 @@ const recStop = () => {
       );
 
       // #ifdef APP
-      //App中直接将二进制数据保存到本地文件，然后再上传
+      // 将 ArrayBuffer 转换为 Base64 字符串
+      const base64Data = uni.arrayBufferToBase64(arrayBuffer);
+      
       RecordApp.UniSaveLocalFile(
         fileName + '.mp3',
         arrayBuffer,
         (savePath) => {
           console.log('保存录音文件成功: savePath', savePath);
-          console.log('保存录音文件成功: arrayBuffer', arrayBuffer);
 
-          // 使用 uni.saveFile 将临时文件转为永久文件
           uni.saveFile({
             tempFilePath: savePath,
             success: (res) => {
@@ -352,18 +352,16 @@ const recStop = () => {
                 filePath: savedFilePath,
                 tempFilePath: savePath,
                 fileSize: arrayBuffer.byteLength,
-                arrayBuffer,
+                audioBase64: base64Data, // 存储 Base64 格式的音频数据
                 mime,
                 recordText: getAudioToTextExample()
               };
 
-              // 获取已有的录音列表
               let recordList = uni.getStorageSync('recordList') || [];
               recordList.unshift(recordInfo);
               uni.setStorageSync('recordList', recordList);
               console.log('本地录音列表', recordList);
 
-              // 跳转到播放页面
               uni.navigateTo({
                 url: '/pages/record-play/index?id=' + startTimestamp
               });
