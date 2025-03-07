@@ -21,7 +21,7 @@
           <button @click="switchTab('ai-assistant')" :class="{ active: currentTab === 'ai-assistant' }">AI助手</button>
         </view>
 
-        <template v-if="currentTab === 'transcription-results' && recordInfo">
+        <template v-if="currentTab === 'transcription-results'">
           <view class="record-info">
             <view class="file-name">{{ recordInfo.fileName }}</view>
             <view class="record-time">
@@ -35,7 +35,7 @@
           </view>
         </template>
 
-        <template v-if="currentTab === 'ai-assistant' && recordInfo">
+        <template v-if="currentTab === 'ai-assistant'">
           <view class="features" v-for="result in taskResult" :key="result.id">
             <view class="topbox">
               <view class="title">{{ result.name }}: </view>
@@ -83,7 +83,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { GetSupportedTasks, ProcessTextTask } from '@/api/api';
 import Docxtemplater from 'docxtemplater';
@@ -101,28 +101,33 @@ const currentShareContent = ref('');
 onLoad((options) => {
   if (!options?.id) {
     uni.showToast({ title: '文件ID无效', icon: 'error', duration: 2000 });
-    uni.navigateBack();
     return;
   }
 
   const recordList = uni.getStorageSync('recordList') || [];
   if (recordList.length > 0) {
     recordInfo.value = recordList.find((item) => item.startTimestamp == options.id);
-    getTaskList();
-    if (recordInfo.value) {
-    }
+    console.log('当前录音', recordInfo.value);
   }
+
+  getTaskList();
 });
 
 const getTaskList = async () => {
   try {
     const res = await GetSupportedTasks();
-    // console.log('任务列表', res.data);
+    console.log('获取任务', res.data);
     newTaskList.value = taskList.value = res.data || [];
   } catch (error) {
     newTaskList.value = taskList.value = [];
+    console.error('获取任务失败', error);
+    uni.showToast({ title: '获取任务失败', icon: 'error' });
   }
 };
+
+// onMounted(() => {
+//   getTaskList();
+// });
 
 const processTask = async (item, isRegenerate = false) => {
   uni.showLoading({ title: '请稍后...', mask: true });

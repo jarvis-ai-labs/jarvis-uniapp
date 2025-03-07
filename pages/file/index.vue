@@ -84,7 +84,6 @@ const renameInput = ref('');
 onShow(() => {
   recordList.value = uni.getStorageSync('recordList') || [];
   console.log('本地录音列表', recordList.value);
-  console.log('import.meta.env', import.meta.env);
 });
 
 const toRecordPlayPage = (item) => {

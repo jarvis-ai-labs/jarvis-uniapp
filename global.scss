@@ -44,9 +44,11 @@ body {
   }
 }
 
-.uni-toast {
-  width: 10em;
-  font-size: 20px;
+uni-toast {
+  .uni-toast {
+    width: 10em;
+    font-size: 16px;
+  }
 }
 
 .ua__markdown {

@@ -71,7 +71,6 @@ const audioContext = ref(null);
 onLoad((options) => {
   if (!options?.id) {
     uni.showToast({ title: '文件ID无效', icon: 'error', duration: 2000 });
-    uni.navigateBack();
     return;
   }
 

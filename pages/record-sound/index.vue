@@ -62,8 +62,8 @@ import Recorder from 'recorder-core';
 // #ifdef H5 || MP-WEIXIN
 //按需引入需要的录音格式编码器，用不到的不需要引入，减少程序体积；H5、renderjs中可以把编码器放到static文件夹里面用动态创建script来引入，免得这些文件太大
 import 'recorder-core/src/engine/wav.js';
-// import 'recorder-core/src/engine/mp3.js';
-// import 'recorder-core/src/engine/mp3-engine.js';
+import 'recorder-core/src/engine/mp3.js';
+import 'recorder-core/src/engine/mp3-engine.js';
 
 //可选引入可视化插件
 import 'recorder-core/src/extensions/waveview.js';
@@ -81,7 +81,7 @@ import 'recorder-core/src/app-support/app-miniProgram-wx-support.js';
 
 import { ref, getCurrentInstance, onMounted, onUnmounted } from 'vue';
 import { onShow, onBackPress } from '@dcloudio/uni-app';
-import { formatDate, getAudioToTextExample } from '@/utils';
+import { formatDate } from '@/utils';
 
 import permision from '@/js_sdk/wa-permission/permission.js';
 
@@ -155,10 +155,6 @@ onUnmounted(() => {
 
 onShow(() => {
   reclog('onShow');
-  // if (vue3This.isMounted) {
-  //   RecordApp.UniPageOnShow(vue3This);
-  //   recReq();
-  // }
 });
 
 const recReq = () => {
@@ -333,6 +329,9 @@ const recStop = () => {
         arrayBuffer,
         (savePath) => {
           console.log('保存录音成功:', savePath);
+          arrayBuffer;
+
+          const audioBase64 = uni.arrayBufferToBase64(arrayBuffer);
 
           uni.saveFile({
             tempFilePath: savePath,
@@ -348,6 +347,7 @@ const recStop = () => {
                 filePath: savedFilePath,
                 tempFilePath: savePath,
                 arrayBuffer,
+                audioBase64,
                 recordText: ''
               };
 
@@ -444,8 +444,8 @@ const tryClose_androidNotifyService = () => {
 
  //按需引入需要的录音格式编码器，用不到的不需要引入，减少程序体积；H5、renderjs中可以把编码器放到static文件夹里面用动态创建script来引入，免得这些文件太大
  import 'recorder-core/src/engine/wav.js'
-//  import 'recorder-core/src/engine/mp3.js'
-//  import 'recorder-core/src/engine/mp3-engine.js'
+ import 'recorder-core/src/engine/mp3.js'
+ import 'recorder-core/src/engine/mp3-engine.js'
 
  //可选引入可视化插件
  import 'recorder-core/src/extensions/waveview.js'

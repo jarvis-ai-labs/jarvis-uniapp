@@ -43,7 +43,6 @@ const logText = ref('');
 onLoad((options) => {
   if (!options?.id) {
     uni.showToast({ title: '文件ID无效', icon: 'error', duration: 2000 });
-    uni.navigateBack();
     return;
   }
 
@@ -59,6 +58,12 @@ const handleAudioToText = async () => {
   const accessToken = import.meta.env.VITE_ACCESSTOKEN;
   audioToTextLoading.value = true;
   logText.value = '正在转换文字...';
+  console.log('appKey', appKey);
+  console.log('accessToken', accessToken);
+  console.log('recordInfo', recordInfo.value);
+
+  const audioArrayBuffer = uni.base64ToArrayBuffer(recordInfo.value.audioBase64);
+
   try {
     const response = await uni.request({
       url: `http://nls-gateway-cn-shanghai.aliyuncs.com/stream/v1/asr?appkey=${appKey}`,
@@ -67,7 +72,7 @@ const handleAudioToText = async () => {
         'Content-Type': 'application/json',
         'X-NLS-Token': accessToken
       },
-      data: recordInfo.value.arrayBuffer
+      data: audioArrayBuffer
     });
 
     console.log('录音转文字结果:', response);
@@ -130,7 +135,7 @@ const handleGoBack = () => {
 //     };
 
 //     const policyBase64 = btoa(JSON.stringify(policy));
-//     const signature = CryptoJS.HmacSHA1(policyBase64, AccessKeySecret).toString(CryptoJS.enc.Base64);
+//     const signature = CryptoJS.HmacSHA1(policyBase64, import.meta.env.VITE_AccessKey_Secret).toString(CryptoJS.enc.Base64);
 
 //     return { policy: policyBase64, signature: signature };
 //   } catch (error) {
@@ -153,7 +158,7 @@ const handleGoBack = () => {
 //         formData: {
 //           key: fileName,
 //           success_action_status: '200',
-//           OSSAccessKeyId: AccessKeyID,
+//           OSSAccessKeyId: import.meta.env.VITE_AccessKey_ID,
 //           policy: policy,
 //           signature: signature
 //         },
