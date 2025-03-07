@@ -30,9 +30,7 @@
           </view>
         </view>
 
-        <view class="record-content">
-          <text>音纹识别</text>
-        </view>
+        <view class="record-content"> </view>
 
         <view class="player-controls">
           <slider
@@ -80,7 +78,6 @@ onLoad((options) => {
   const recordList = uni.getStorageSync('recordList') || [];
   if (recordList.length > 0) {
     recordInfo.value = recordList.find((item) => item.startTimestamp == options.id);
-    console.log('当前录音文件信息:', recordInfo.value);
     if (recordInfo.value) {
       initAudioPlayer();
     }
@@ -102,16 +99,8 @@ onUnmounted(() => {
 });
 
 const initAudioPlayer = () => {
-  // if (recordInfo.value.audioBase64) {
-  //   // 将 Base64 转回 ArrayBuffer
-  //   const arrayBuffer = uni.base64ToArrayBuffer(recordInfo.value.audioBase64);
-  //   console.log('恢复的音频数据大小:', arrayBuffer.byteLength);
-  //   // 使用 arrayBuffer...
-  // }
-
   audioContext.value = uni.createInnerAudioContext();
 
-  // #ifdef APP-PLUS
   // 检查文件是否存在并获取真实路径
   plus.io.resolveLocalFileSystemURL(
     recordInfo.value.filePath,
@@ -131,31 +120,18 @@ const initAudioPlayer = () => {
             initAudioEvents();
           },
           (e) => {
-            uni.showToast({
-              title: '文件不存在或无法访问',
-              icon: 'none'
-            });
+            uni.showToast({ title: '文件不存在或无法访问', icon: 'none' });
           }
         );
       }
     }
   );
-  // #endif
-
-  // #ifdef H5 || MP-WEIXIN
-  audioContext.value.src = recordInfo.value.filePath;
-  initAudioEvents();
-  // #endif
 };
 
 // 将音频事件监听抽取为单独的函数
 const initAudioEvents = () => {
   audioContext.value.onError((res) => {
-    console.error('播放错误:', res);
-    uni.showToast({
-      title: '播放失败: ' + res.errMsg,
-      icon: 'none'
-    });
+    uni.showToast({ title: '播放失败: ' + res.errMsg, icon: 'none' });
   });
 
   audioContext.value.onCanplay(() => {
@@ -208,16 +184,25 @@ const updateCurrentTime = (time) => {
 };
 
 const handleGoBack = () => {
+  if (audioContext.value) {
+    audioContext.value.pause();
+  }
   uni.switchTab({ url: '/pages/file/index' });
 };
 
 const toAudioToTextPage = () => {
+  if (audioContext.value) {
+    audioContext.value.pause();
+  }
   uni.navigateTo({
     url: '/pages/audio-to-text/index?id=' + recordInfo.value.startTimestamp
   });
 };
 
 const toAiPage = () => {
+  if (audioContext.value) {
+    audioContext.value.pause();
+  }
   uni.navigateTo({
     url: '/pages/record-detail/index?id=' + recordInfo.value.startTimestamp
   });

@@ -1,16 +1,33 @@
 {
-    "name": "jarvis-uniapp",
-    "version": "1.0.0",
-    "description": "Jarvis 提供文件管理、任务生成、AI 助手等功能。",
-    "keywords": [
-        "jarvis",
-        "ai",
-        "file-management",
-        "task-generation"
-    ],
-    "dependencies": {
-        "docxtemplater": "^3.60.1",
-        "pizzip": "^3.1.8",
-        "recorder-core": "*"
+  "name": "jarvis-uniapp",
+  "version": "1.0.0",
+  "description": "Jarvis 提供文件管理、任务生成、AI 助手等功能。",
+  "keywords": [
+    "jarvis",
+    "ai",
+    "file-management",
+    "task-generation"
+  ],
+  "dependencies": {
+    "ali-oss": "^6.22.0",
+    "crypto-js": "^4.2.0",
+    "docxtemplater": "^3.60.1",
+    "pizzip": "^3.1.8",
+    "recorder-core": "*"
+  },
+  "uni-app": {
+    "scripts": {
+      "custom-platform": {
+        "title": "",
+        "browser": "",
+        "env": {
+          "UNI_PLATFORM": "UNI_PLATFORM",
+          "MY_TEST": "MY_TEST"
+        },
+        "define": {
+          "CUSTOM-CONST": true
+        }
+      }
     }
+  }
 }

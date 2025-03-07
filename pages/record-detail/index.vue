@@ -35,7 +35,7 @@
           </view>
         </template>
 
-        <template v-if="currentTab === 'ai-assistant'">
+        <template v-if="currentTab === 'ai-assistant' && recordInfo">
           <view class="features" v-for="result in taskResult" :key="result.id">
             <view class="topbox">
               <view class="title">{{ result.name }}: </view>
@@ -108,9 +108,8 @@ onLoad((options) => {
   const recordList = uni.getStorageSync('recordList') || [];
   if (recordList.length > 0) {
     recordInfo.value = recordList.find((item) => item.startTimestamp == options.id);
-    console.log('当前录音文件', recordInfo.value);
+    getTaskList();
     if (recordInfo.value) {
-      getTaskList();
     }
   }
 });
@@ -118,12 +117,10 @@ onLoad((options) => {
 const getTaskList = async () => {
   try {
     const res = await GetSupportedTasks();
-    console.log('任务列表', res.data);
+    // console.log('任务列表', res.data);
     newTaskList.value = taskList.value = res.data || [];
   } catch (error) {
-    console.error('获取任务列表失败', error);
     newTaskList.value = taskList.value = [];
-    uni.showToast({ title: '获取任务列表失败，请重试', icon: 'error', duration: 2000 });
   }
 };
 
@@ -139,7 +136,6 @@ const processTask = async (item, isRegenerate = false) => {
 
   try {
     const res = await ProcessTextTask(item.name, recordInfo.value.recordText);
-    console.log(item.name, res.data);
 
     const target = taskResult.value.find((result) => result.id === item.id);
     if (target) {
@@ -147,7 +143,6 @@ const processTask = async (item, isRegenerate = false) => {
     }
     showRemainingTask.value = false;
   } catch (error) {
-    console.log('error', error);
     const target = taskResult.value.find((result) => result.id === item.id);
     if (target) {
       target.result = isRegenerate ? '重新生成失败，请重试' : '生成失败，请重试';
@@ -159,17 +154,14 @@ const processTask = async (item, isRegenerate = false) => {
 };
 
 const handleClickTask = async (item) => {
-  console.log('点击任务生成', item);
   await processTask(item);
 };
 
 const handleRegenerate = async (item) => {
-  console.log('重新生成', item);
   await processTask(item, true);
 };
 
 const handleOpenShare = (item) => {
-  console.log('分享', item);
   currentShareContent.value = item.result;
   shareDom.value.open('bottom');
 };

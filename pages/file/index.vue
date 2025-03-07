@@ -82,9 +82,9 @@ const renameDialog = ref(null);
 const renameInput = ref('');
 
 onShow(() => {
-  // uni.removeStorageSync('recordList');
   recordList.value = uni.getStorageSync('recordList') || [];
   console.log('本地录音列表', recordList.value);
+  console.log('import.meta.env', import.meta.env);
 });
 
 const toRecordPlayPage = (item) => {
@@ -135,25 +135,13 @@ const deleteDialogClose = () => {
   deleteDialog.value.close();
 };
 
-const handleClickLeft = () => {
-  console.log('点击左侧按钮');
-};
+const handleClickLeft = () => {};
 
-const handleClickRight = () => {
-  console.log('点击右侧按钮');
-};
+const handleClickRight = () => {};
 
 const handleSoundRecording = () => {
   uni.navigateTo({ url: '/pages/record-sound/index' });
 };
-
-// const dialogConfirm = () => {
-//   console.log('点击确认');
-// };
-
-// const dialogClose = () => {
-//   console.log('点击关闭');
-// };
 </script>
 
 <style lang="scss" scoped>

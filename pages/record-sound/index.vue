@@ -15,10 +15,10 @@
           <view class="record-box">
             <!-- 可视化绘制 -->
             <view class="recwave-box">
-              <view class="recwave-progress">
+              <!-- <view class="recwave-progress">
                 <view class="recwave-progress-bar" :style="{ width: recpowerx + '%' }"></view>
                 <view class="recwave-progress-text">{{ recpowert }}</view>
-              </view>
+              </view> -->
 
               <canvas type="2d" class="recwave-WaveView"></canvas>
             </view>
@@ -61,8 +61,9 @@ import Recorder from 'recorder-core';
 /** H5、小程序环境中：引入需要的格式编码器、可视化插件，App环境中在renderjs中引入 **/
 // #ifdef H5 || MP-WEIXIN
 //按需引入需要的录音格式编码器，用不到的不需要引入，减少程序体积；H5、renderjs中可以把编码器放到static文件夹里面用动态创建script来引入，免得这些文件太大
-import 'recorder-core/src/engine/mp3.js';
-import 'recorder-core/src/engine/mp3-engine.js';
+import 'recorder-core/src/engine/wav.js';
+// import 'recorder-core/src/engine/mp3.js';
+// import 'recorder-core/src/engine/mp3-engine.js';
 
 //可选引入可视化插件
 import 'recorder-core/src/extensions/waveview.js';
@@ -182,7 +183,6 @@ const recReq = () => {
       recStart();
     },
     (msg, isUserNotAllow) => {
-      console.log('msg, isUserNotAllow', msg, isUserNotAllow);
       if (isUserNotAllow) {
         //用户拒绝了录音权限
         //这里你应当编写代码进行引导用户给录音权限，不同平台分别进行编写
@@ -194,8 +194,7 @@ const recReq = () => {
 };
 
 const openPermissionSetting = () => {
-  console.log('uniPlatform', uni.getSystemInfoSync().uniPlatform);
-  console.log('platform', uni.getSystemInfoSync().platform);
+  console.log('当前平台：', uni.getSystemInfoSync().uniPlatform, uni.getSystemInfoSync().platform);
 
   if (uni.getSystemInfoSync().uniPlatform === 'app') {
     if (uni.getSystemInfoSync().platform === 'android') {
@@ -224,7 +223,7 @@ const recStart = () => {
 
   RecordApp.Start(
     {
-      type: 'mp3',
+      type: 'wav',
       sampleRate: 16000,
       bitRate: 16,
 
@@ -270,7 +269,7 @@ const recStart = () => {
       }`
     },
     () => {
-      reclog('录制中 mp3 appUseH5Rec', 2);
+      reclog('录制中 appUseH5Rec', 2);
       isRecording.value = true;
 
       // 初始化 WaveView
@@ -312,7 +311,7 @@ const recStop = () => {
 
   RecordApp.Stop(
     (arrayBuffer, duration, mime) => {
-      const recSet = (RecordApp.GetCurrentRecOrNull() || { set: { type: 'mp3' } }).set;
+      const recSet = (RecordApp.GetCurrentRecOrNull() || { set: { type: 'wav' } }).set;
       reclog(
         '已录制[' +
           mime +
@@ -329,20 +328,17 @@ const recStop = () => {
       );
 
       // #ifdef APP
-      // 将 ArrayBuffer 转换为 Base64 字符串
-      const base64Data = uni.arrayBufferToBase64(arrayBuffer);
-      
       RecordApp.UniSaveLocalFile(
-        fileName + '.mp3',
+        fileName + '.wav',
         arrayBuffer,
         (savePath) => {
-          console.log('保存录音文件成功: savePath', savePath);
+          console.log('保存录音成功:', savePath);
 
           uni.saveFile({
             tempFilePath: savePath,
             success: (res) => {
               const savedFilePath = res.savedFilePath;
-              console.log('永久保存文件成功:', savedFilePath);
+              console.log('保存录音成功:', savedFilePath);
 
               const recordInfo = {
                 fileName,
@@ -351,44 +347,29 @@ const recStop = () => {
                 duration: formatTime(duration, 0),
                 filePath: savedFilePath,
                 tempFilePath: savePath,
-                fileSize: arrayBuffer.byteLength,
-                audioBase64: base64Data, // 存储 Base64 格式的音频数据
-                mime,
-                recordText: getAudioToTextExample()
+                arrayBuffer,
+                recordText: ''
               };
 
               let recordList = uni.getStorageSync('recordList') || [];
               recordList.unshift(recordInfo);
               uni.setStorageSync('recordList', recordList);
-              console.log('本地录音列表', recordList);
 
               uni.navigateTo({
                 url: '/pages/record-play/index?id=' + startTimestamp
               });
             },
             fail: (err) => {
-              console.error('永久保存文件失败:', err);
+              console.error('保存录音失败:', err);
               uni.showToast({ title: '保存录音失败', icon: 'error' });
             }
           });
         },
         (errMsg) => {
-          console.error('保存录音文件失败:', errMsg);
+          console.error('保存录音失败:', errMsg);
           uni.showToast({ title: '保存录音失败', icon: 'error' });
         }
       );
-      // #endif
-
-      // #ifdef H5
-      //H5中直接使用浏览器提供的File接口构造一个文件
-      // uni.uploadFile({
-      //   url: '上传接口地址',
-      //   file: new File([arrayBuffer], 'recorder.mp3'),
-      //   name: 'audio',
-      //   formData: {},
-      //   success: (res) => {},
-      //   fail: (err) => {}
-      // });
       // #endif
     },
     (msg) => {
@@ -462,8 +443,9 @@ const tryClose_androidNotifyService = () => {
  import Recorder from 'recorder-core';
 
  //按需引入需要的录音格式编码器，用不到的不需要引入，减少程序体积；H5、renderjs中可以把编码器放到static文件夹里面用动态创建script来引入，免得这些文件太大
- import 'recorder-core/src/engine/mp3.js'
- import 'recorder-core/src/engine/mp3-engine.js'
+ import 'recorder-core/src/engine/wav.js'
+//  import 'recorder-core/src/engine/mp3.js'
+//  import 'recorder-core/src/engine/mp3-engine.js'
 
  //可选引入可视化插件
  import 'recorder-core/src/extensions/waveview.js'

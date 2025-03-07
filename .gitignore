@@ -6,3 +6,6 @@ wxcomponents/**/*.vue
 wxcomponents/**/*.css
 .hbuilderx/
 uni_modules/
+.env
+.env.local
+.env.*
