@@ -80,8 +80,6 @@ const handleAudioToText = async () => {
 
     const data = response.data;
     if (response.statusCode === 200 && data.status === 20000000) {
-      logText.value = '转换成功';
-
       const recordList = uni.getStorageSync('recordList') || [];
       const newRecordList = recordList.map((record) => {
         if (record.startTimestamp === recordInfo.value.startTimestamp) {
@@ -91,9 +89,10 @@ const handleAudioToText = async () => {
       });
       uni.setStorageSync('recordList', newRecordList);
 
-      audioToTextLoading.value = false;
-      uni.showToast({ title: '转换成功', icon: 'success' });
+      logText.value = '录音转文字成功';
+      uni.showToast({ title: '录音转文字成功', icon: 'success' });
       setTimeout(() => {
+        audioToTextLoading.value = false;
         uni.navigateTo({
           url: '/pages/record-detail/index?id=' + recordInfo.value.startTimestamp
         });
@@ -108,9 +107,9 @@ const handleAudioToText = async () => {
 };
 
 const conversionFailed = (message) => {
-  logText.value = `转换失败: ${message}`;
+  logText.value = `录音转文字失败: ${message}`;
+  uni.showToast({ title: '录音转文字失败', icon: 'error' });
   audioToTextLoading.value = false;
-  uni.showToast({ title: '转换失败', icon: 'error' });
 };
 
 const handleGoBack = () => {
