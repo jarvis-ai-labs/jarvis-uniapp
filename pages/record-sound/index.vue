@@ -137,9 +137,8 @@ const formatTime = (ms, showSS) => {
 onBackPress((options) => {
   if (options.from == 'backbutton') {
     return true;
-  } else if (options.from == 'navigateBack') {
-    return false;
   }
+  return false;
 });
 
 onMounted(() => {

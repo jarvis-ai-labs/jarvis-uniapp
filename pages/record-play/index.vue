@@ -8,14 +8,13 @@
       height="50px"
       left-icon="back"
       left-text="文件"
-      @clickLeft="handleGoBack"
-      right-width="100px">
+      @clickLeft="handleGoBack">
+      <!-- right-width="100px" -->
       <template #right>
         <view class="record-play-nav-bar">
           <text @click="toAudioToTextPage">转文字</text>
           <!-- <text>分享</text> -->
           <!-- <uni-icons type="more-filled" size="20" color="#000000" /> -->
-          <text @click="toAiPage">AI</text>
         </view>
       </template>
     </uni-nav-bar>
@@ -90,10 +89,14 @@ onLoad((options) => {
   }
 });
 
-onBackPress((options) => {
-  if (options.from == 'backbutton') {
+onBackPress(() => {
+  const pages = getCurrentPages();
+  const prevPage = pages[pages.length - 2];
+  console.log('prevPage.route', prevPage.route);
+  if (prevPage.route == 'pages/record-sound/index') {
+    uni.switchTab({ url: '/pages/file/index' });
     return true;
-  } else if (options.from == 'navigateBack') {
+  } else {
     return false;
   }
 });
@@ -202,15 +205,6 @@ const toAudioToTextPage = () => {
   }
   uni.navigateTo({
     url: '/pages/audio-to-text/index?id=' + recordInfo.value.startTimestamp
-  });
-};
-
-const toAiPage = () => {
-  if (audioContext.value) {
-    audioContext.value.pause();
-  }
-  uni.navigateTo({
-    url: '/pages/record-detail/index?id=' + recordInfo.value.startTimestamp
   });
 };
 </script>

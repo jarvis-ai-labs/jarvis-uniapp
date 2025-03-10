@@ -19,7 +19,7 @@
       }
     },
     {
-      "path": "pages/record-detail/index",
+      "path": "pages/record-text/index",
       "style": {
         "navigationStyle": "custom"
       }

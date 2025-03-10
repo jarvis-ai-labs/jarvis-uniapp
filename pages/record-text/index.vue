@@ -11,7 +11,7 @@
       @clickLeft="handleGoBack" />
 
     <view class="container-box">
-      <view class="record-detail-box">
+      <view class="record-text-box">
         <view class="tabs">
           <button
             @click="switchTab('transcription-results')"
@@ -280,7 +280,7 @@ const handleCopyText = () => {
 </script>
 
 <style lang="scss" scoped>
-.record-detail-box {
+.record-text-box {
   width: 100%;
   min-height: calc(100vh - 125px);
   border-radius: 24px;

@@ -24,7 +24,7 @@
                   <view class="time2">{{ item.startTime }}</view>
                 </view>
               </view>
-              <view class="file-item-right">
+              <view class="file-item-right" v-if="item.recordText">
                 <button class="file-item-button" @click.stop="toFileDetailPage(item)">文字</button>
               </view>
             </view>
@@ -101,7 +101,7 @@ const toRecordPlayPage = (item) => {
 
 const toFileDetailPage = (item) => {
   uni.navigateTo({
-    url: '/pages/record-detail/index?id=' + item.startTimestamp
+    url: '/pages/record-text/index?id=' + item.startTimestamp
   });
 };
 

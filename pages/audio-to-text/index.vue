@@ -8,6 +8,7 @@
       height="50px"
       title="语音转文字"
       left-icon="back"
+      left-text="文件"
       @clickLeft="handleGoBack" />
 
     <view class="container-box">
@@ -25,7 +26,10 @@
           <text>{{ logText }}</text>
         </view>
         <view class="audio-to-text-btn-box">
-          <button class="audio-to-text-btn" v-if="!audioToTextLoading" @click="handleAudioToText">开始转文字</button>
+          <template v-if="!audioToTextLoading">
+            <button class="audio-to-text-btn" v-if="!audioToText" @click="handleAudioToText">开始转文字</button>
+            <button class="audio-to-text-btn" v-else @click="toRecordTextPage">查看转录结果</button>
+          </template>
         </view>
       </view>
     </view>
@@ -40,6 +44,7 @@ import { formatDate } from '@/utils';
 
 const recordInfo = ref(null);
 const audioToTextLoading = ref(false);
+const audioToText = ref('');
 const logText = ref('');
 
 // 从环境变量获取配置
@@ -193,6 +198,8 @@ const handleAudioToText = async () => {
 
     const data = response.data;
     if (response.statusCode === 200 && data.status === 20000000) {
+      audioToText.value = data.result;
+
       let recordList = [];
       // #ifdef H5 || MP-WEIXIN
       recordList = JSON.parse(localStorage.getItem('recordList')) || [];
@@ -203,7 +210,7 @@ const handleAudioToText = async () => {
 
       const newRecordList = recordList.map((record) => {
         if (record.startTimestamp === recordInfo.value.startTimestamp) {
-          record.recordText = data.result;
+          record.recordText = audioToText.value;
         }
         return record;
       });
@@ -217,12 +224,7 @@ const handleAudioToText = async () => {
 
       logText.value = '录音转文字成功';
       uni.showToast({ title: '录音转文字成功', icon: 'success' });
-      setTimeout(() => {
-        audioToTextLoading.value = false;
-        uni.navigateTo({
-          url: '/pages/record-detail/index?id=' + recordInfo.value.startTimestamp
-        });
-      }, 1000);
+      audioToTextLoading.value = false;
     } else {
       logText.value = `录音转文字失败: ${data.message}`;
       uni.showToast({ title: '录音转文字失败', icon: 'error' });
@@ -236,8 +238,14 @@ const handleAudioToText = async () => {
   }
 };
 
+const toRecordTextPage = () => {
+  uni.navigateTo({
+    url: '/pages/record-text/index?id=' + recordInfo.value.startTimestamp
+  });
+};
+
 const handleGoBack = () => {
-  uni.navigateBack();
+  uni.switchTab({ url: '/pages/file/index' });
 };
 
 // 获取 OSS 签名
@@ -338,9 +346,10 @@ const handleGoBack = () => {
 }
 
 .audio-to-text-btn-box {
+  height: 40px;
   margin-bottom: 50px;
   .audio-to-text-btn {
-    width: 120px;
+    width: 150px;
     height: 40px;
     border-radius: 20px;
     background: #dae7f2;
