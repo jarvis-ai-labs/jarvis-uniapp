@@ -74,12 +74,19 @@ onLoad((options) => {
     return;
   }
 
-  const recordList = uni.getStorageSync('recordList') || [];
+  let recordList = [];
+
+  // #ifdef H5 || MP-WEIXIN
+  recordList = JSON.parse(localStorage.getItem('recordList')) || [];
+  // #endif
+
+  // #ifdef APP
+  recordList = uni.getStorageSync('recordList') || [];
+  // #endif
+
   if (recordList.length > 0) {
     recordInfo.value = recordList.find((item) => item.startTimestamp == options.id);
-    if (recordInfo.value) {
-      initAudioPlayer();
-    }
+    if (recordInfo.value) initAudioPlayer();
   }
 });
 

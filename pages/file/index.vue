@@ -82,8 +82,15 @@ const renameDialog = ref(null);
 const renameInput = ref('');
 
 onShow(() => {
+  // #ifdef H5 || MP-WEIXIN
+  recordList.value = JSON.parse(localStorage.getItem('recordList')) || [];
+  console.log('H5本地录音列表', recordList.value);
+  // #endif
+
+  // #ifdef APP
   recordList.value = uni.getStorageSync('recordList') || [];
-  console.log('本地录音列表', recordList.value);
+  console.log('APP本地录音列表', recordList.value);
+  // #endif
 });
 
 const toRecordPlayPage = (item) => {

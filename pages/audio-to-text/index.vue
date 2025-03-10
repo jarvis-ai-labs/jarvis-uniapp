@@ -35,59 +35,185 @@
 <script setup>
 import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
+import CryptoJS from 'crypto-js';
+import { formatDate } from '@/utils';
 
 const recordInfo = ref(null);
 const audioToTextLoading = ref(false);
 const logText = ref('');
 
-onLoad((options) => {
+// 从环境变量获取配置
+const appKey = import.meta.env.VITE_APPKEY;
+const accessKeyId = import.meta.env.VITE_ACCESSKEYID;
+const accessKeySecret = import.meta.env.VITE_ACCESSKEYSECRET;
+const accessTokenKey = 'aliyun_access_token';
+const accessTokenExpireKey = 'aliyun_access_token_expire';
+let accessToken = ref('');
+let accessTokenExpire = ref('');
+
+onLoad(async (options) => {
   if (!options?.id) {
     uni.showToast({ title: '文件ID无效', icon: 'error', duration: 2000 });
     return;
   }
 
-  const recordList = uni.getStorageSync('recordList') || [];
+  let recordList = [];
+  // #ifdef H5 || MP-WEIXIN
+  recordList = JSON.parse(localStorage.getItem('recordList')) || [];
+  // #endif
+  // #ifdef APP
+  recordList = uni.getStorageSync('recordList') || [];
+  // #endif
   if (recordList.length > 0) {
     recordInfo.value = recordList.find((item) => item.startTimestamp == options.id);
   }
 });
 
+// 获取 AccessToken
+const getAccessToken = async () => {
+  try {
+    const date = new Date();
+    const timestamp = date.toISOString();
+    const nonce = Math.random().toString(36).substr(2, 15);
+
+    // 构建规范化请求字符串
+    const parameters = {
+      AccessKeyId: accessKeyId,
+      Action: 'CreateToken',
+      Format: 'JSON',
+      RegionId: 'cn-shanghai',
+      SignatureMethod: 'HMAC-SHA1',
+      SignatureNonce: nonce,
+      SignatureVersion: '1.0',
+      Timestamp: timestamp,
+      Version: '2019-02-28'
+    };
+
+    // 按照参数名称的字典顺序排序
+    const sortedParams = Object.keys(parameters)
+      .sort()
+      .reduce((acc, key) => {
+        acc[key] = parameters[key];
+        return acc;
+      }, {});
+
+    // 构建规范化的请求字符串
+    const canonicalizedQueryString = Object.entries(sortedParams)
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+      .join('&');
+
+    // 构建待签名字符串
+    const stringToSign = `GET&${encodeURIComponent('/')}&${encodeURIComponent(canonicalizedQueryString)}`;
+
+    // 计算签名
+    const signature = CryptoJS.HmacSHA1(stringToSign, `${accessKeySecret}&`).toString(CryptoJS.enc.Base64);
+
+    // 添加签名到参数中
+    parameters.Signature = signature;
+
+    // 构建最终的请求URL
+    const requestUrl = `http://nls-meta.cn-shanghai.aliyuncs.com/?${Object.entries(parameters)
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+      .join('&')}`;
+
+    const response = await uni.request({
+      url: requestUrl,
+      method: 'GET'
+    });
+
+    console.log('getAccessToken', response);
+
+    if (response.statusCode === 200 && response.data.Token) {
+      accessToken.value = response.data.Token.Id;
+      // 存储 Token 的过期时间（转换为毫秒）
+      accessTokenExpire.value = response.data.Token.ExpireTime * 1000;
+
+      // 将 Token 和过期时间存储到缓存
+      // #ifdef H5 || MP-WEIXIN
+      localStorage.setItem(accessTokenKey, accessToken.value);
+      localStorage.setItem(accessTokenExpireKey, accessTokenExpire.value.toString());
+      // #endif
+      // #ifdef APP
+      uni.setStorageSync(accessTokenKey, accessToken.value);
+      uni.setStorageSync(accessTokenExpireKey, accessTokenExpire.value.toString());
+      // #endif
+
+      console.log('获取 AccessToken 成功', accessToken.value);
+      console.log('AccessToken 有效期至', formatDate(accessTokenExpire.value));
+    } else {
+      logText.value = `获取授权失败: ${response.data.ErrMsg}`;
+      uni.showToast({ title: '获取授权失败', icon: 'error' });
+      audioToTextLoading.value = false;
+    }
+  } catch (error) {
+    console.error('获取 AccessToken 失败:', error);
+    logText.value = `获取授权失败: ${error.message}`;
+    uni.showToast({ title: '获取授权失败', icon: 'error' });
+    audioToTextLoading.value = false;
+  }
+};
+
 // 处理开始转文字按钮点击
 const handleAudioToText = async () => {
-  const appKey = import.meta.env.VITE_APPKEY;
-  const accessToken = import.meta.env.VITE_ACCESSTOKEN;
   audioToTextLoading.value = true;
   logText.value = '正在转换文字...';
-  console.log('appKey', appKey);
-  console.log('accessToken', accessToken);
-  console.log('recordInfo', recordInfo.value);
 
-  const audioArrayBuffer = uni.base64ToArrayBuffer(recordInfo.value.audioBase64);
+  // 检查 Token 是否有效
+  // #ifdef H5 || MP-WEIXIN
+  accessToken.value = localStorage.getItem(accessTokenKey);
+  accessTokenExpire.value = parseInt(localStorage.getItem(accessTokenExpireKey));
+  // #endif
+  // #ifdef APP
+  accessToken.value = uni.getStorageSync(accessTokenKey);
+  accessTokenExpire.value = parseInt(uni.getStorageSync(accessTokenExpireKey));
+  // #endif
+
+  // 如果当前 Token 未过期
+  if (accessToken.value && accessTokenExpire.value && accessTokenExpire.value > Date.now()) {
+    console.log('使用存储的 AccessToken', accessToken.value);
+    console.log('AccessToken 有效期至', formatDate(accessTokenExpire.value));
+  } else {
+    await getAccessToken();
+  }
 
   try {
+    const audioArrayBuffer = uni.base64ToArrayBuffer(recordInfo.value.audioBase64);
+
     const response = await uni.request({
       url: `http://nls-gateway-cn-shanghai.aliyuncs.com/stream/v1/asr?appkey=${appKey}`,
       method: 'POST',
       header: {
-        'Content-Type': 'application/json',
-        'X-NLS-Token': accessToken
+        'Content-Type': 'audio/mp3',
+        'X-NLS-Token': accessToken.value
       },
       data: audioArrayBuffer
     });
 
-    console.log('录音转文字结果:', response);
-    console.log('录音转文字结果:', response.data);
+    console.log('录音转文字结果', response);
 
     const data = response.data;
     if (response.statusCode === 200 && data.status === 20000000) {
-      const recordList = uni.getStorageSync('recordList') || [];
+      let recordList = [];
+      // #ifdef H5 || MP-WEIXIN
+      recordList = JSON.parse(localStorage.getItem('recordList')) || [];
+      // #endif
+      // #ifdef APP
+      recordList = uni.getStorageSync('recordList') || [];
+      // #endif
+
       const newRecordList = recordList.map((record) => {
         if (record.startTimestamp === recordInfo.value.startTimestamp) {
           record.recordText = data.result;
         }
         return record;
       });
+
+      // #ifdef H5 || MP-WEIXIN
+      localStorage.setItem('recordList', JSON.stringify(newRecordList));
+      // #endif
+      // #ifdef APP
       uni.setStorageSync('recordList', newRecordList);
+      // #endif
 
       logText.value = '录音转文字成功';
       uni.showToast({ title: '录音转文字成功', icon: 'success' });
@@ -98,25 +224,21 @@ const handleAudioToText = async () => {
         });
       }, 1000);
     } else {
-      conversionFailed(data.message);
+      logText.value = `录音转文字失败: ${data.message}`;
+      uni.showToast({ title: '录音转文字失败', icon: 'error' });
+      audioToTextLoading.value = false;
     }
   } catch (error) {
-    console.error('转换失败:', error);
-    conversionFailed(error.message);
+    console.error('录音转文字失败:', error);
+    logText.value = `录音转文字失败: ${error.message}`;
+    uni.showToast({ title: '录音转文字失败', icon: 'error' });
+    audioToTextLoading.value = false;
   }
-};
-
-const conversionFailed = (message) => {
-  logText.value = `录音转文字失败: ${message}`;
-  uni.showToast({ title: '录音转文字失败', icon: 'error' });
-  audioToTextLoading.value = false;
 };
 
 const handleGoBack = () => {
   uni.navigateBack();
 };
-
-// import CryptoJS from 'crypto-js';
 
 // 获取 OSS 签名
 // const getOssSignature = async () => {
@@ -134,7 +256,7 @@ const handleGoBack = () => {
 //     };
 
 //     const policyBase64 = btoa(JSON.stringify(policy));
-//     const signature = CryptoJS.HmacSHA1(policyBase64, import.meta.env.VITE_AccessKey_Secret).toString(CryptoJS.enc.Base64);
+//     const signature = CryptoJS.HmacSHA1(policyBase64, import.meta.env.VITE_ACCESSKEYSECRET).toString(CryptoJS.enc.Base64);
 
 //     return { policy: policyBase64, signature: signature };
 //   } catch (error) {
@@ -157,7 +279,7 @@ const handleGoBack = () => {
 //         formData: {
 //           key: fileName,
 //           success_action_status: '200',
-//           OSSAccessKeyId: import.meta.env.VITE_AccessKey_ID,
+//           OSSAccessKeyId: import.meta.env.VITE_ACCESSKEYID,
 //           policy: policy,
 //           signature: signature
 //         },

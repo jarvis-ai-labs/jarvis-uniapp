@@ -104,13 +104,21 @@ onLoad((options) => {
     return;
   }
 
-  const recordList = uni.getStorageSync('recordList') || [];
+  let recordList = [];
+
+  // #ifdef H5 || MP-WEIXIN
+  recordList = JSON.parse(localStorage.getItem('recordList')) || [];
+  // #endif
+
+  // #ifdef APP
+  recordList = uni.getStorageSync('recordList') || [];
+  // #endif
+
   if (recordList.length > 0) {
     recordInfo.value = recordList.find((item) => item.startTimestamp == options.id);
     console.log('当前录音', recordInfo.value);
+    if (recordInfo.value) getTaskList();
   }
-
-  getTaskList();
 });
 
 const getTaskList = async () => {
