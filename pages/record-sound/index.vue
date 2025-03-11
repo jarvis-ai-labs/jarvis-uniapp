@@ -218,7 +218,7 @@ const recStart = () => {
 
   RecordApp.Start(
     {
-      type: 'wav',
+      type: 'mp3',
       sampleRate: 16000,
       bitRate: 16,
 
@@ -306,7 +306,7 @@ const recStop = () => {
 
   RecordApp.Stop(
     (arrayBuffer, duration, mime) => {
-      const recSet = (RecordApp.GetCurrentRecOrNull() || { set: { type: 'wav' } }).set;
+      const recSet = (RecordApp.GetCurrentRecOrNull() || { set: { type: 'mp3' } }).set;
       reclog(
         '已录制[' +
           mime +
@@ -324,7 +324,7 @@ const recStop = () => {
 
       // #ifdef APP
       RecordApp.UniSaveLocalFile(
-        fileName + '.wav',
+        fileName + '.mp3',
         arrayBuffer,
         (savePath) => {
           console.log('保存录音成功:', savePath);
