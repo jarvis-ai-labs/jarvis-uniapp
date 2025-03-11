@@ -12,7 +12,7 @@
       @clickLeft="handleGoBack" />
 
     <view class="container-box">
-      <view class="audio-to-text-box">
+      <view class="transcription-text-box">
         <view class="record-info" v-if="recordInfo">
           <view class="file-name">{{ recordInfo.fileName }}</view>
           <view class="record-time">
@@ -20,15 +20,15 @@
             <view class="time2">{{ recordInfo.startTime }}</view>
           </view>
         </view>
-        <view class="audio-to-text-content">
+        <view class="transcription-text-content">
           <image mode="widthFix" src="/static/logo2.png" v-if="audioToTextLoading" />
           <image mode="widthFix" src="/static/logo2-active.png" v-else />
           <text>{{ logText }}</text>
         </view>
-        <view class="audio-to-text-btn-box">
+        <view class="transcription-text-btn-box">
           <template v-if="!audioToTextLoading">
-            <button class="audio-to-text-btn" v-if="!audioToText" @click="handleAudioToText">开始转文字</button>
-            <button class="audio-to-text-btn" v-else @click="toRecordTextPage">查看转录结果</button>
+            <button class="transcription-text-btn" v-if="!audioToText" @click="handleAudioToText">开始转文字</button>
+            <button class="transcription-text-btn" v-else @click="toTranscriptionResultPage">查看转录结果</button>
           </template>
         </view>
       </view>
@@ -66,13 +66,7 @@ onLoad(async (options) => {
     return;
   }
 
-  let recordList = [];
-  // #ifdef H5 || MP-WEIXIN
-  recordList = JSON.parse(localStorage.getItem('recordList')) || [];
-  // #endif
-  // #ifdef APP
-  recordList = uni.getStorageSync('recordList') || [];
-  // #endif
+  const recordList = uni.getStorageSync('recordList') || [];
   if (recordList.length > 0) {
     recordInfo.value = recordList.find((item) => item.startTimestamp == options.id);
   }
@@ -126,7 +120,6 @@ const uploadToOss = async (filePath) => {
         success: (res) => {
           if (res.statusCode === 200) {
             logText.value = '文件上传成功';
-            // resolve(`${ossBucketUrl}/${fileName}`);
             resolve(fileName);
           } else {
             logText.value = '文件上传失败';
@@ -150,14 +143,8 @@ const uploadToOss = async (filePath) => {
 // 获取 AccessToken
 const getAccessToken = async () => {
   // 检查 Token 是否有效
-  // #ifdef H5 || MP-WEIXIN
-  accessToken.value = localStorage.getItem(accessTokenKey);
-  accessTokenExpire.value = parseInt(localStorage.getItem(accessTokenExpireKey));
-  // #endif
-  // #ifdef APP
   accessToken.value = uni.getStorageSync(accessTokenKey);
   accessTokenExpire.value = parseInt(uni.getStorageSync(accessTokenExpireKey));
-  // #endif
 
   // 如果当前 Token 未过期
   if (accessToken.value && accessTokenExpire.value && accessTokenExpire.value > Date.now()) {
@@ -218,16 +205,9 @@ const getAccessToken = async () => {
         accessToken.value = response.data.Token.Id;
         // 存储 Token 的过期时间（转换为毫秒）
         accessTokenExpire.value = response.data.Token.ExpireTime * 1000;
-
         // 将 Token 和过期时间存储到缓存
-        // #ifdef H5 || MP-WEIXIN
-        localStorage.setItem(accessTokenKey, accessToken.value);
-        localStorage.setItem(accessTokenExpireKey, accessTokenExpire.value.toString());
-        // #endif
-        // #ifdef APP
         uni.setStorageSync(accessTokenKey, accessToken.value);
         uni.setStorageSync(accessTokenExpireKey, accessTokenExpire.value.toString());
-        // #endif
 
         console.log('获取 AccessToken 成功', accessToken.value);
         console.log('AccessToken 有效期至', formatDate(accessTokenExpire.value));
@@ -403,20 +383,27 @@ const checkResult = async (taskId) => {
         // 任务成功，处理结果
         console.log('转写成功', result);
         logText.value = '转写成功';
-        audioToTextLoading.value = false;
-        audioToText.value = true;
 
         // 如果有转写结果URL，需要下载结果
         if (result.Result && result.Result.Transcription) {
           const transcriptionUrl = result.Result.Transcription;
           const transcriptionResult = await fetchTranscriptionResult(transcriptionUrl);
           console.log('转写结果', transcriptionResult);
-          if (transcriptionResult && transcriptionResult.Sentences) {
-            // 更新录音文本
-            updateRecordText(transcriptionResult.Sentences);
-          }
+
+          // 更新存储
+          let recordList = uni.getStorageSync('recordList') || [];
+          const newRecordList = recordList.map((record) => {
+            if (record.startTimestamp === recordInfo.value.startTimestamp) {
+              record.transcriptionResult = transcriptionResult;
+            }
+            return record;
+          });
+
+          uni.setStorageSync('recordList', newRecordList);
         }
 
+        audioToTextLoading.value = false;
+        audioToText.value = true;
         return result;
       } else if (status === 'FAILED') {
         // 任务失败
@@ -436,26 +423,6 @@ const checkResult = async (taskId) => {
     console.error('查询任务结果失败:', error);
     audioToTextLoading.value = false;
     logText.value = `转换失败: ${error.message}`;
-    throw error;
-  }
-};
-
-// 添加获取转写结果的函数
-const fetchTranscriptionResult = async (url) => {
-  try {
-    const response = await uni.request({
-      url: url,
-      method: 'GET'
-    });
-
-    if (response.statusCode === 200) {
-      console.log('获取转写结果', response.data.Transcription.Paragraphs);
-      return response.data.Transcription.Paragraphs;
-    } else {
-      throw new Error('获取转写结果失败');
-    }
-  } catch (error) {
-    console.error('获取转写结果失败:', error);
     throw error;
   }
 };
@@ -563,20 +530,24 @@ const getTaskInfo = async (taskId) => {
   }
 };
 
-const updateRecordText = (sentences) => {
-  let recordList = uni.getStorageSync('recordList') || [];
+// 添加获取转写结果的函数
+const fetchTranscriptionResult = async (url) => {
+  try {
+    const response = await uni.request({
+      url: url,
+      method: 'GET'
+    });
 
-  const newRecordList = recordList.map((record) => {
-    if (record.startTimestamp === recordInfo.value.startTimestamp) {
-      record.recordText = {
-        sentences,
-        speakers: [...new Set(sentences.map((s) => s.speaker))].length
-      };
+    if (response.statusCode === 200) {
+      console.log('获取转写结果', response.data);
+      return response.data;
+    } else {
+      throw new Error('获取转写结果失败');
     }
-    return record;
-  });
-
-  uni.setStorageSync('recordList', newRecordList);
+  } catch (error) {
+    console.error('获取转写结果失败:', error);
+    throw error;
+  }
 };
 
 // 处理开始转文字按钮点击
@@ -609,9 +580,9 @@ const handleAudioToText = async () => {
   }
 };
 
-const toRecordTextPage = () => {
+const toTranscriptionResultPage = () => {
   uni.navigateTo({
-    url: '/pages/record-text/index?id=' + recordInfo.value.startTimestamp
+    url: '/pages/transcription-result/index?id=' + recordInfo.value.startTimestamp
   });
 };
 
@@ -621,7 +592,7 @@ const handleGoBack = () => {
 </script>
 
 <style lang="scss" scoped>
-.audio-to-text-box {
+.transcription-text-box {
   width: 100%;
   height: calc(100vh - 125px);
   border-radius: 24px;
@@ -633,7 +604,7 @@ const handleGoBack = () => {
   justify-content: space-between;
 }
 
-.audio-to-text-content {
+.transcription-text-content {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -650,10 +621,10 @@ const handleGoBack = () => {
   }
 }
 
-.audio-to-text-btn-box {
+.transcription-text-btn-box {
   height: 40px;
   margin-bottom: 50px;
-  .audio-to-text-btn {
+  .transcription-text-btn {
     width: 150px;
     height: 40px;
     border-radius: 20px;

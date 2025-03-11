@@ -11,7 +11,7 @@
       @clickLeft="handleGoBack" />
 
     <view class="container-box">
-      <view class="record-text-box">
+      <view class="transcription-result-box">
         <view class="tabs">
           <button
             @click="switchTab('transcription-results')"
@@ -31,7 +31,12 @@
           </view>
 
           <view class="transcription-box">
-            <view>{{ recordInfo.recordText }}</view>
+            <view v-for="item in paragraphs" :key="item.ParagraphId">
+              <view class="speaker">说话人{{ item.SpeakerId }}：</view>
+              <view class="text">
+                <text v-for="word in item.Words" :key="word.Id">{{ word.Text }}</text>
+              </view>
+            </view>
           </view>
         </template>
 
@@ -92,6 +97,7 @@ import PizZip from 'pizzip';
 const shareDom = ref(null);
 const currentTab = ref('transcription-results');
 const recordInfo = ref(null);
+const paragraphs = ref([]);
 const showRemainingTask = ref(true);
 const taskList = ref([]);
 const newTaskList = ref([]);
@@ -104,27 +110,21 @@ onLoad((options) => {
     return;
   }
 
-  let recordList = [];
-
-  // #ifdef H5 || MP-WEIXIN
-  recordList = JSON.parse(localStorage.getItem('recordList')) || [];
-  // #endif
-
-  // #ifdef APP
-  recordList = uni.getStorageSync('recordList') || [];
-  // #endif
-
+  const recordList = uni.getStorageSync('recordList') || [];
   if (recordList.length > 0) {
     recordInfo.value = recordList.find((item) => item.startTimestamp == options.id);
     console.log('当前录音', recordInfo.value);
-    if (recordInfo.value) getTaskList();
+    if (recordInfo.value) {
+      getTaskList();
+      paragraphs.value = recordInfo.value.transcriptionResult.Transcription.Paragraphs;
+      console.log('段落', paragraphs.value);
+    }
   }
 });
 
 const getTaskList = async () => {
   try {
     const res = await GetSupportedTasks();
-    console.log('获取任务', res.data);
     newTaskList.value = taskList.value = res.data || [];
   } catch (error) {
     newTaskList.value = taskList.value = [];
@@ -132,10 +132,6 @@ const getTaskList = async () => {
     uni.showToast({ title: '获取任务失败', icon: 'error' });
   }
 };
-
-// onMounted(() => {
-//   getTaskList();
-// });
 
 const processTask = async (item, isRegenerate = false) => {
   uni.showLoading({ title: '请稍后...', mask: true });
@@ -147,8 +143,18 @@ const processTask = async (item, isRegenerate = false) => {
     taskResult.value = taskResult.value.map((result) => (result.id === item.id ? { ...result, result: '' } : result));
   }
 
+  let text = '';
+  paragraphs.value.forEach((item) => {
+    text += `说话人${item.SpeakerId}：`;
+    item.Words.forEach((word) => {
+      text += word.Text;
+    });
+    text += '\n';
+  });
+  console.log('text', text);
+
   try {
-    const res = await ProcessTextTask(item.name, recordInfo.value.recordText);
+    const res = await ProcessTextTask(item.name, text);
 
     const target = taskResult.value.find((result) => result.id === item.id);
     if (target) {
@@ -280,7 +286,7 @@ const handleCopyText = () => {
 </script>
 
 <style lang="scss" scoped>
-.record-text-box {
+.transcription-result-box {
   width: 100%;
   min-height: calc(100vh - 125px);
   border-radius: 24px;

@@ -24,7 +24,7 @@
                   <view class="time2">{{ item.startTime }}</view>
                 </view>
               </view>
-              <view class="file-item-right" v-if="item.recordText">
+              <view class="file-item-right" v-if="item.transcriptionResult">
                 <button class="file-item-button" @click.stop="toFileDetailPage(item)">文字</button>
               </view>
             </view>
@@ -82,15 +82,8 @@ const renameDialog = ref(null);
 const renameInput = ref('');
 
 onShow(() => {
-  // #ifdef H5 || MP-WEIXIN
-  recordList.value = JSON.parse(localStorage.getItem('recordList')) || [];
-  console.log('H5本地录音列表', recordList.value);
-  // #endif
-
-  // #ifdef APP
   recordList.value = uni.getStorageSync('recordList') || [];
   console.log('APP本地录音列表', recordList.value);
-  // #endif
 });
 
 const toRecordPlayPage = (item) => {
@@ -101,7 +94,7 @@ const toRecordPlayPage = (item) => {
 
 const toFileDetailPage = (item) => {
   uni.navigateTo({
-    url: '/pages/record-text/index?id=' + item.startTimestamp
+    url: '/pages/transcription-result/index?id=' + item.startTimestamp
   });
 };
 
@@ -143,7 +136,10 @@ const deleteDialogClose = () => {
 
 const handleClickLeft = () => {};
 
-const handleClickRight = () => {};
+const handleClickRight = () => {
+  uni.removeStorageSync('recordList');
+  recordList.value = [];
+};
 
 const handleSoundRecording = () => {
   uni.navigateTo({ url: '/pages/record-sound/index' });

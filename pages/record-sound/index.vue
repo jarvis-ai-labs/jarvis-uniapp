@@ -347,20 +347,12 @@ const recStop = () => {
                 tempFilePath: savePath,
                 arrayBuffer,
                 audioBase64,
-                recordText: ''
+                transcriptionResult: null
               };
 
-              let recordList = [];
-              // #ifdef H5 || MP-WEIXIN
-              recordList = JSON.parse(localStorage.getItem('recordList')) || [];
-              recordList.unshift(recordInfo);
-              localStorage.setItem('recordList', JSON.stringify(recordList));
-              // #endif
-              // #ifdef APP
-              recordList = uni.getStorageSync('recordList') || [];
+              let recordList = uni.getStorageSync('recordList') || [];
               recordList.unshift(recordInfo);
               uni.setStorageSync('recordList', recordList);
-              // #endif
 
               uni.navigateTo({
                 url: '/pages/record-play/index?id=' + startTimestamp

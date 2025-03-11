@@ -19,7 +19,7 @@
       }
     },
     {
-      "path": "pages/record-text/index",
+      "path": "pages/transcription-result/index",
       "style": {
         "navigationStyle": "custom"
       }
@@ -37,7 +37,7 @@
       }
     },
     {
-      "path": "pages/audio-to-text/index",
+      "path": "pages/transcription-text/index",
       "style": {
         "navigationStyle": "custom"
       }

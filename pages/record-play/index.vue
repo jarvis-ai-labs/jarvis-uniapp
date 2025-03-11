@@ -73,16 +73,7 @@ onLoad((options) => {
     return;
   }
 
-  let recordList = [];
-
-  // #ifdef H5 || MP-WEIXIN
-  recordList = JSON.parse(localStorage.getItem('recordList')) || [];
-  // #endif
-
-  // #ifdef APP
-  recordList = uni.getStorageSync('recordList') || [];
-  // #endif
-
+  const recordList = uni.getStorageSync('recordList') || [];
   if (recordList.length > 0) {
     recordInfo.value = recordList.find((item) => item.startTimestamp == options.id);
     if (recordInfo.value) initAudioPlayer();
@@ -204,7 +195,7 @@ const toAudioToTextPage = () => {
     audioContext.value.pause();
   }
   uni.navigateTo({
-    url: '/pages/audio-to-text/index?id=' + recordInfo.value.startTimestamp
+    url: '/pages/transcription-text/index?id=' + recordInfo.value.startTimestamp
   });
 };
 </script>
