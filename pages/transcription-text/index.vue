@@ -21,14 +21,17 @@
           </view>
         </view>
         <view class="transcription-text-content">
-          <image mode="widthFix" src="/static/logo2.png" v-if="audioToTextLoading" />
-          <image mode="widthFix" src="/static/logo2-active.png" v-else />
-          <text>{{ logText }}</text>
+          <image mode="widthFix" src="/static/logo2-active.png" />
+          <view class="log-list" v-if="logTextList.length > 0">
+            <text v-for="(log, index) in logTextList" :key="index">{{ log }}</text>
+          </view>
         </view>
         <view class="transcription-text-btn-box">
           <template v-if="!audioToTextLoading">
-            <button class="transcription-text-btn" v-if="!audioToText" @click="handleAudioToText">开始转文字</button>
-            <button class="transcription-text-btn" v-else @click="toTranscriptionResultPage">查看转录结果</button>
+            <button class="transcription-text-btn" v-if="transcriptionResult" @click="toTranscriptionResultPage">
+              查看转录结果
+            </button>
+            <button class="transcription-text-btn" v-else @click="handleAudioToText">开始转文字</button>
           </template>
         </view>
       </view>
@@ -40,25 +43,24 @@
 import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import CryptoJS from 'crypto-js';
-import { formatDate } from '@/utils';
 import OSS from 'ali-oss';
 
-const recordInfo = ref(null);
-const audioToTextLoading = ref(false);
-const audioToText = ref('');
-const logText = ref('');
-
 // 从环境变量获取配置
-const appKey = import.meta.env.VITE_APPKEY;
-const accessKeyId = import.meta.env.VITE_ACCESSKEYID;
-const accessKeySecret = import.meta.env.VITE_ACCESSKEYSECRET;
-const ossBucketUrl = import.meta.env.VITE_OSSBUCKETURL;
-const tingwuAppkey = import.meta.env.VITE_TINGWU_APPKEY;
+const APPKEY = import.meta.env.VITE_APPKEY;
+const ACCESSKEYID = import.meta.env.VITE_ACCESSKEYID;
+const ACCESSKEYSECRET = import.meta.env.VITE_ACCESSKEYSECRET;
+const OSSBUCKETURL = import.meta.env.VITE_OSSBUCKETURL;
+const TINGWU_APPKEY = import.meta.env.VITE_TINGWU_APPKEY;
 
 const accessTokenKey = 'aliyun_access_token';
 const accessTokenExpireKey = 'aliyun_access_token_expire';
 let accessToken = ref('');
 let accessTokenExpire = ref('');
+
+const recordInfo = ref(null);
+const transcriptionResult = ref(null);
+const audioToTextLoading = ref(false);
+const logTextList = ref([]);
 
 onLoad(async (options) => {
   if (!options?.id) {
@@ -72,8 +74,87 @@ onLoad(async (options) => {
   }
 });
 
+// 获取 AccessToken
+const getAccessToken = async () => {
+  // 检查 Token 是否有效
+  accessToken.value = uni.getStorageSync(accessTokenKey);
+  accessTokenExpire.value = parseInt(uni.getStorageSync(accessTokenExpireKey));
+
+  // 如果当前 Token 未过期
+  if (accessToken.value && accessTokenExpire.value && accessTokenExpire.value > Date.now()) {
+    logTextList.value.push('使用已有授权令牌');
+    return;
+  }
+
+  try {
+    const date = new Date();
+    const timestamp = date.toISOString();
+    const nonce = Math.random().toString(36).substr(2, 15);
+
+    // 构建规范化请求字符串
+    const parameters = {
+      AccessKeyId: ACCESSKEYID,
+      Action: 'CreateToken',
+      Format: 'JSON',
+      RegionId: 'cn-shanghai',
+      SignatureMethod: 'HMAC-SHA1',
+      SignatureNonce: nonce,
+      SignatureVersion: '1.0',
+      Timestamp: timestamp,
+      Version: '2019-02-28'
+    };
+
+    // 按照参数名称的字典顺序排序
+    const sortedParams = Object.keys(parameters)
+      .sort()
+      .reduce((acc, key) => {
+        acc[key] = parameters[key];
+        return acc;
+      }, {});
+
+    // 构建规范化的请求字符串
+    const canonicalizedQueryString = Object.entries(sortedParams)
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+      .join('&');
+
+    // 构建待签名字符串
+    const stringToSign = `GET&${encodeURIComponent('/')}&${encodeURIComponent(canonicalizedQueryString)}`;
+
+    // 计算签名
+    const signature = CryptoJS.HmacSHA1(stringToSign, `${ACCESSKEYSECRET}&`).toString(CryptoJS.enc.Base64);
+
+    // 添加签名到参数中
+    parameters.Signature = signature;
+
+    // 构建最终的请求URL
+    const requestUrl = `http://nls-meta.cn-shanghai.aliyuncs.com/?${Object.entries(parameters)
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+      .join('&')}`;
+
+    const response = await uni.request({
+      url: requestUrl,
+      method: 'GET'
+    });
+
+    if (response.statusCode === 200 && response.data.Token) {
+      accessToken.value = response.data.Token.Id;
+      accessTokenExpire.value = response.data.Token.ExpireTime * 1000;
+      // 将 Token 和过期时间存储到缓存
+      uni.setStorageSync(accessTokenKey, accessToken.value);
+      uni.setStorageSync(accessTokenExpireKey, accessTokenExpire.value.toString());
+
+      logTextList.value.push('获取授权令牌成功');
+    } else {
+      logTextList.value.push(`获取授权失败: ${response.data.ErrMsg || '未知错误'}`);
+    }
+  } catch (error) {
+    logTextList.value.push(`获取授权失败: ${error.message}`);
+  }
+};
+
 // 获取 OSS 签名
 const getOssSignature = async () => {
+  logTextList.value.push('获取上传签名...');
   try {
     const date = new Date();
     date.setHours(date.getHours() + 1);
@@ -88,159 +169,75 @@ const getOssSignature = async () => {
     };
 
     const policyBase64 = btoa(JSON.stringify(policy));
-    const signature = CryptoJS.HmacSHA1(policyBase64, import.meta.env.VITE_ACCESSKEYSECRET).toString(
-      CryptoJS.enc.Base64
-    );
+    const signature = CryptoJS.HmacSHA1(policyBase64, ACCESSKEYSECRET).toString(CryptoJS.enc.Base64);
 
     return { policy: policyBase64, signature: signature };
   } catch (error) {
-    console.error('获取签名失败:', error);
-    throw error;
+    logTextList.value.push('获取上传签名失败');
   }
 };
 
 // 上传文件到 OSS
-const uploadToOss = async (filePath) => {
+const uploadToOss = async (filePath, policy, signature) => {
+  logTextList.value.push('开始上传录音...');
   try {
-    const { policy, signature } = await getOssSignature();
     const fileName = `${recordInfo.value.startTimestamp}.mp3`;
-
     return new Promise((resolve, reject) => {
       uni.uploadFile({
-        url: ossBucketUrl,
+        url: OSSBUCKETURL,
         filePath: filePath,
         name: 'file',
         formData: {
           key: fileName,
           success_action_status: '200',
-          OSSAccessKeyId: accessKeyId,
+          OSSAccessKeyId: ACCESSKEYID,
           policy: policy,
           signature: signature
         },
         success: (res) => {
           if (res.statusCode === 200) {
-            logText.value = '文件上传成功';
+            logTextList.value.push('音频文件上传成功');
             resolve(fileName);
           } else {
-            logText.value = '文件上传失败';
+            logTextList.value.push('音频文件上传失败');
             reject(new Error('文件上传失败'));
           }
         },
         fail: (err) => {
-          logText.value = '文件上传失败';
-          console.error('文件上传失败:', err);
+          logTextList.value.push(`上传失败: ${err.errMsg || '未知错误'}`);
           reject(err);
         }
       });
     });
   } catch (error) {
-    logText.value = '文件上传失败';
-    console.error('文件上传失败:', error);
-    throw error;
-  }
-};
-
-// 获取 AccessToken
-const getAccessToken = async () => {
-  // 检查 Token 是否有效
-  accessToken.value = uni.getStorageSync(accessTokenKey);
-  accessTokenExpire.value = parseInt(uni.getStorageSync(accessTokenExpireKey));
-
-  // 如果当前 Token 未过期
-  if (accessToken.value && accessTokenExpire.value && accessTokenExpire.value > Date.now()) {
-    console.log('使用存储的 AccessToken', accessToken.value);
-    console.log('存储的 AccessToken 有效期至', formatDate(accessTokenExpire.value));
-  } else {
-    try {
-      const date = new Date();
-      const timestamp = date.toISOString();
-      const nonce = Math.random().toString(36).substr(2, 15);
-
-      // 构建规范化请求字符串
-      const parameters = {
-        AccessKeyId: accessKeyId,
-        Action: 'CreateToken',
-        Format: 'JSON',
-        RegionId: 'cn-shanghai',
-        SignatureMethod: 'HMAC-SHA1',
-        SignatureNonce: nonce,
-        SignatureVersion: '1.0',
-        Timestamp: timestamp,
-        Version: '2019-02-28'
-      };
-
-      // 按照参数名称的字典顺序排序
-      const sortedParams = Object.keys(parameters)
-        .sort()
-        .reduce((acc, key) => {
-          acc[key] = parameters[key];
-          return acc;
-        }, {});
-
-      // 构建规范化的请求字符串
-      const canonicalizedQueryString = Object.entries(sortedParams)
-        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-        .join('&');
-
-      // 构建待签名字符串
-      const stringToSign = `GET&${encodeURIComponent('/')}&${encodeURIComponent(canonicalizedQueryString)}`;
-
-      // 计算签名
-      const signature = CryptoJS.HmacSHA1(stringToSign, `${accessKeySecret}&`).toString(CryptoJS.enc.Base64);
-
-      // 添加签名到参数中
-      parameters.Signature = signature;
-
-      // 构建最终的请求URL
-      const requestUrl = `http://nls-meta.cn-shanghai.aliyuncs.com/?${Object.entries(parameters)
-        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-        .join('&')}`;
-
-      const response = await uni.request({
-        url: requestUrl,
-        method: 'GET'
-      });
-
-      if (response.statusCode === 200 && response.data.Token) {
-        accessToken.value = response.data.Token.Id;
-        // 存储 Token 的过期时间（转换为毫秒）
-        accessTokenExpire.value = response.data.Token.ExpireTime * 1000;
-        // 将 Token 和过期时间存储到缓存
-        uni.setStorageSync(accessTokenKey, accessToken.value);
-        uni.setStorageSync(accessTokenExpireKey, accessTokenExpire.value.toString());
-
-        console.log('获取 AccessToken 成功', accessToken.value);
-        console.log('AccessToken 有效期至', formatDate(accessTokenExpire.value));
-      } else {
-        logText.value = `获取授权失败: ${response.data.ErrMsg}`;
-        uni.showToast({ title: '获取授权失败', icon: 'error' });
-        audioToTextLoading.value = false;
-      }
-    } catch (error) {
-      console.error('获取 AccessToken 失败:', error);
-      logText.value = `获取授权失败: ${error.message}`;
-      uni.showToast({ title: '获取授权失败', icon: 'error' });
-      audioToTextLoading.value = false;
-    }
+    logTextList.value.push(`上传失败: ${error.message}`);
   }
 };
 
 // 定义一个生成预签名 URL 的函数
 async function generateSignatureUrl(fileName) {
-  const client = new OSS({
-    accessKeyId: accessKeyId,
-    accessKeySecret: accessKeySecret,
-    bucket: 'jarvis-uniapp',
-    region: 'oss-cn-shanghai',
-    secure: true,
-    authorizationV4: true
-  });
+  logTextList.value.push('生成文件访问链接...');
+  try {
+    const client = new OSS({
+      accessKeyId: ACCESSKEYID,
+      accessKeySecret: ACCESSKEYSECRET,
+      bucket: 'jarvis-uniapp',
+      region: 'oss-cn-shanghai',
+      secure: true,
+      authorizationV4: true
+    });
 
-  return await client.signatureUrlV4('GET', 3600, { headers: {} }, fileName);
+    const url = await client.signatureUrlV4('GET', 3600, { headers: {} }, fileName);
+    logTextList.value.push('生成访问链接成功');
+    return url;
+  } catch (error) {
+    logTextList.value.push(`生成访问链接失败: ${error.message}`);
+  }
 }
 
 // 创建转写任务
 const createTask = async (audioUrl) => {
+  logTextList.value.push('创建转写任务...');
   try {
     // 1. 构建请求参数
     const date = new Date();
@@ -248,7 +245,7 @@ const createTask = async (audioUrl) => {
     const nonce = Math.random().toString(36).substr(2, 15);
 
     const requestBody = {
-      AppKey: tingwuAppkey,
+      AppKey: TINGWU_APPKEY,
       Input: {
         SourceLanguage: 'cn',
         FileUrl: audioUrl
@@ -273,9 +270,7 @@ const createTask = async (audioUrl) => {
     const path = '/openapi/tingwu/v2/tasks';
 
     // 构建查询参数
-    const queryParams = {
-      type: 'offline'
-    };
+    const queryParams = { type: 'offline' };
 
     // 按字典顺序排序查询参数
     const sortedQueryParams = {};
@@ -334,10 +329,10 @@ const createTask = async (audioUrl) => {
     const stringToSign = ['ACS3-HMAC-SHA256', hashedCanonicalRequest].join('\n');
 
     // 计算签名
-    const signature = CryptoJS.HmacSHA256(stringToSign, accessKeySecret).toString(CryptoJS.enc.Hex);
+    const signature = CryptoJS.HmacSHA256(stringToSign, ACCESSKEYSECRET).toString(CryptoJS.enc.Hex);
 
     // 构建 Authorization 头
-    const authorization = `ACS3-HMAC-SHA256 Credential=${accessKeyId},SignedHeaders=${signedHeaders},Signature=${signature}`;
+    const authorization = `ACS3-HMAC-SHA256 Credential=${ACCESSKEYID},SignedHeaders=${signedHeaders},Signature=${signature}`;
 
     // 构建最终的请求 URL
     const requestUrl = `https://${host}${path}?${canonicalQueryString}`;
@@ -353,82 +348,20 @@ const createTask = async (audioUrl) => {
       data: requestBody
     });
 
-    console.log('创建任务', response);
-
     if (response.statusCode === 200) {
+      logTextList.value.push('创建转写任务成功');
       return response.data.Data.TaskId;
     } else {
-      throw new Error(response.data.Message || '创建任务失败');
+      logTextList.value.push(`创建任务失败: ${response.data.Message || '未知错误'}`);
     }
   } catch (error) {
-    console.error('创建任务失败:', error);
-    throw error;
+    logTextList.value.push(`创建任务失败: ${error.message}`);
   }
 };
 
-// 修改 checkResult 函数
-const checkResult = async (taskId) => {
-  try {
-    let status = 'RUNNING';
-    let maxRetries = 60; // 最大重试次数
-    let retryCount = 0;
-
-    while ((status === 'RUNNING' || status === 'ONGOING') && retryCount < maxRetries) {
-      // 获取任务状态
-      const result = await getTaskInfo(taskId);
-      status = result.TaskStatus || result.Status;
-      console.log('任务状态:', status, result);
-
-      if (status === 'SUCCESS' || status === 'COMPLETED') {
-        // 任务成功，处理结果
-        console.log('转写成功', result);
-        logText.value = '转写成功';
-
-        // 如果有转写结果URL，需要下载结果
-        if (result.Result && result.Result.Transcription) {
-          const transcriptionUrl = result.Result.Transcription;
-          const transcriptionResult = await fetchTranscriptionResult(transcriptionUrl);
-          console.log('转写结果', transcriptionResult);
-
-          // 更新存储
-          let recordList = uni.getStorageSync('recordList') || [];
-          const newRecordList = recordList.map((record) => {
-            if (record.startTimestamp === recordInfo.value.startTimestamp) {
-              record.transcriptionResult = transcriptionResult;
-            }
-            return record;
-          });
-
-          uni.setStorageSync('recordList', newRecordList);
-        }
-
-        audioToTextLoading.value = false;
-        audioToText.value = true;
-        return result;
-      } else if (status === 'FAILED') {
-        // 任务失败
-        throw new Error(result.StatusText || '转写失败');
-      } else {
-        // 任务仍在进行中，等待后再次查询
-        logText.value = `转写中...${Math.round((retryCount / maxRetries) * 100)}%`;
-        await new Promise((resolve) => setTimeout(resolve, 3000)); // 等待3秒
-        retryCount++;
-      }
-    }
-
-    if (retryCount >= maxRetries) {
-      throw new Error('转写超时');
-    }
-  } catch (error) {
-    console.error('查询任务结果失败:', error);
-    audioToTextLoading.value = false;
-    logText.value = `转换失败: ${error.message}`;
-    throw error;
-  }
-};
-
-// 实现 GetTaskInfo 接口
+// 获取任务信息
 const getTaskInfo = async (taskId) => {
+  logTextList.value.push('获取任务信息...');
   try {
     // 1. 构建请求参数
     const date = new Date();
@@ -499,10 +432,10 @@ const getTaskInfo = async (taskId) => {
     const stringToSign = ['ACS3-HMAC-SHA256', hashedCanonicalRequest].join('\n');
 
     // 计算签名
-    const signature = CryptoJS.HmacSHA256(stringToSign, accessKeySecret).toString(CryptoJS.enc.Hex);
+    const signature = CryptoJS.HmacSHA256(stringToSign, ACCESSKEYSECRET).toString(CryptoJS.enc.Hex);
 
     // 构建 Authorization 头
-    const authorization = `ACS3-HMAC-SHA256 Credential=${accessKeyId},SignedHeaders=${signedHeaders},Signature=${signature}`;
+    const authorization = `ACS3-HMAC-SHA256 Credential=${ACCESSKEYID},SignedHeaders=${signedHeaders},Signature=${signature}`;
 
     // 构建最终的请求 URL
     const requestUrl = `https://${host}${path}${canonicalQueryString ? '?' + canonicalQueryString : ''}`;
@@ -517,21 +450,20 @@ const getTaskInfo = async (taskId) => {
       }
     });
 
-    console.log('获取任务信息', response);
-
-    if (response.statusCode === 200) {
+    if (response.statusCode === 200 && response.data.Code == '0') {
+      logTextList.value.push('获取任务信息成功');
       return response.data.Data;
     } else {
-      throw new Error(response.data.Message || '获取任务信息失败');
+      logTextList.value.push(`获取任务信息失败: ${response.data.Message || '未知错误'}`);
     }
   } catch (error) {
-    console.error('获取任务信息失败:', error);
-    throw error;
+    logTextList.value.push(`获取任务信息失败: ${error.message}`);
   }
 };
 
-// 添加获取转写结果的函数
+// 获取转写结果
 const fetchTranscriptionResult = async (url) => {
+  logTextList.value.push('获取转写结果...');
   try {
     const response = await uni.request({
       url: url,
@@ -539,13 +471,69 @@ const fetchTranscriptionResult = async (url) => {
     });
 
     if (response.statusCode === 200) {
-      console.log('获取转写结果', response.data);
+      logTextList.value.push('获取转写结果成功');
       return response.data;
     } else {
-      throw new Error('获取转写结果失败');
+      logTextList.value.push('获取转写结果失败');
     }
   } catch (error) {
-    console.error('获取转写结果失败:', error);
+    logTextList.value.push(`获取转写结果失败: ${error.message}`);
+  }
+};
+
+// 检查任务结果
+const checkResult = async (taskId) => {
+  logTextList.value.push('检查任务结果...');
+  try {
+    let status = 'RUNNING';
+    let maxRetries = 10; // 最大重试次数
+    let retryCount = 0;
+
+    while ((status === 'RUNNING' || status === 'ONGOING') && retryCount < maxRetries) {
+      // 获取任务状态
+      const result = await getTaskInfo(taskId);
+      status = result.TaskStatus || result.Status;
+
+      if (status === 'SUCCESS' || status === 'COMPLETED') {
+        // 任务成功，处理结果
+        logTextList.value.push('转写任务完成');
+
+        // 如果有转写结果URL，需要下载结果
+        if (result.Result && result.Result.Transcription) {
+          const transcriptionUrl = result.Result.Transcription;
+          transcriptionResult.value = await fetchTranscriptionResult(transcriptionUrl);
+
+          // 更新存储
+          let recordList = uni.getStorageSync('recordList') || [];
+          const newRecordList = recordList.map((record) => {
+            if (record.startTimestamp === recordInfo.value.startTimestamp) {
+              record.transcriptionResult = transcriptionResult.value;
+            }
+            return record;
+          });
+
+          uni.setStorageSync('recordList', newRecordList);
+        }
+
+        audioToTextLoading.value = false;
+        return result;
+      } else if (status === 'FAILED') {
+        // 任务失败
+        logTextList.value.push(`转写失败: ${result.StatusText || '未知错误'}`);
+      } else {
+        // 任务仍在进行中，等待后再次查询
+        logTextList.value.push(`转写中...`);
+        await new Promise((resolve) => setTimeout(resolve, 3000)); // 等待3秒
+        retryCount++;
+      }
+    }
+
+    if (retryCount >= maxRetries) {
+      logTextList.value.push('转写超时，请稍后再试');
+    }
+  } catch (error) {
+    audioToTextLoading.value = false;
+    logTextList.value.push(`转换失败: ${error.message}`);
     throw error;
   }
 };
@@ -553,39 +541,41 @@ const fetchTranscriptionResult = async (url) => {
 // 处理开始转文字按钮点击
 const handleAudioToText = async () => {
   audioToTextLoading.value = true;
-  logText.value = '正在转换中...';
+  logTextList.value = [];
+  logTextList.value.push('开始转文字...');
 
   try {
     // 1. 获取 AccessToken
     await getAccessToken();
 
-    // 2. 上传音频到 OSS，获取文件名称
-    const fileName = await uploadToOss(recordInfo.value.filePath);
-    console.log('上传音频到 OSS，获取文件名称', fileName);
+    // 2. 获取 OSS 签名
+    const { policy, signature } = await getOssSignature();
 
-    // 3. 生成预签名 URL
+    // 3. 上传音频到 OSS，获取文件名称
+    const fileName = await uploadToOss(recordInfo.value.filePath, policy, signature);
+
+    // 4. 生成预签名 URL
     const signatureUrl = await generateSignatureUrl(fileName);
-    console.log('生成预签名 URL', signatureUrl);
 
-    // 4. 创建转写任务
+    // 5. 创建转写任务
     const taskId = await createTask(signatureUrl);
-    console.log('任务创建成功，TaskId:', taskId);
 
-    // 5. 轮询获取结果
+    // 6. 轮询获取结果
     await checkResult(taskId);
   } catch (error) {
-    console.error('录音转文字失败:', error);
     audioToTextLoading.value = false;
-    logText.value = `转换失败: ${error.message}`;
+    logTextList.value.push(`转换失败: ${error.message}`);
   }
 };
 
+// 跳转到转写结果页面
 const toTranscriptionResultPage = () => {
   uni.navigateTo({
     url: '/pages/transcription-result/index?id=' + recordInfo.value.startTimestamp
   });
 };
 
+// 返回上一页
 const handleGoBack = () => {
   uni.switchTab({ url: '/pages/file/index' });
 };
@@ -618,6 +608,32 @@ const handleGoBack = () => {
     font-size: 16px;
     color: #616161;
     margin-top: 10px;
+  }
+
+  .log-list {
+    margin-top: 20px;
+    width: 80%;
+    max-height: 150px;
+    overflow-y: auto;
+
+    text {
+      display: block;
+      font-size: 14px;
+      margin: 5px 0;
+      text-align: left;
+
+      &.error {
+        color: #ff4d4f;
+      }
+
+      &.success {
+        color: #52c41a;
+      }
+
+      &.info {
+        color: #1890ff;
+      }
+    }
   }
 }
 
