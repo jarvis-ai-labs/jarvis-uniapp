@@ -23,7 +23,7 @@
         <view class="transcription-text-content">
           <image mode="widthFix" src="/static/logo2-active.png" />
           <view class="log-list" v-if="logTextList.length > 0">
-            <text v-for="(log, index) in logTextList" :key="index">{{ log }}</text>
+            <view v-for="(log, index) in logTextList" :key="index">{{ log }}</view>
           </view>
         </view>
         <view class="transcription-text-btn-box">
@@ -74,15 +74,15 @@ onLoad(async (options) => {
   }
 });
 
-// 获取 AccessToken
+/**获取 Token 令牌 */
 const getAccessToken = async () => {
+  logTextList.value.push('获取 Token 令牌...');
   // 检查 Token 是否有效
   accessToken.value = uni.getStorageSync(accessTokenKey);
   accessTokenExpire.value = parseInt(uni.getStorageSync(accessTokenExpireKey));
 
   // 如果当前 Token 未过期
   if (accessToken.value && accessTokenExpire.value && accessTokenExpire.value > Date.now()) {
-    logTextList.value.push('使用已有授权令牌');
     return;
   }
 
@@ -142,25 +142,24 @@ const getAccessToken = async () => {
       // 将 Token 和过期时间存储到缓存
       uni.setStorageSync(accessTokenKey, accessToken.value);
       uni.setStorageSync(accessTokenExpireKey, accessTokenExpire.value.toString());
-
-      logTextList.value.push('获取授权令牌成功');
     } else {
-      logTextList.value.push(`获取授权失败: ${response.data.ErrMsg || '未知错误'}`);
+      logTextList.value.push(`获取 Token 令牌失败`);
     }
   } catch (error) {
-    logTextList.value.push(`获取授权失败: ${error.message}`);
+    logTextList.value.push(`获取 Token 令牌失败`);
   }
 };
 
-// 获取 OSS 签名
-const getOssSignature = async () => {
-  logTextList.value.push('获取上传签名...');
+/**上传录音 */
+const uploadToOss = async (filePath) => {
+  logTextList.value.push('上传录音...');
+
   try {
     const date = new Date();
     date.setHours(date.getHours() + 1);
     const expiration = date.toISOString();
 
-    const policy = {
+    const policyObj = {
       expiration: expiration,
       conditions: [
         ['content-length-range', 0, 10485760], // 限制文件大小在 10MB 以内
@@ -168,20 +167,11 @@ const getOssSignature = async () => {
       ]
     };
 
-    const policyBase64 = btoa(JSON.stringify(policy));
-    const signature = CryptoJS.HmacSHA1(policyBase64, ACCESSKEYSECRET).toString(CryptoJS.enc.Base64);
+    const policy = btoa(JSON.stringify(policyObj));
+    const signature = CryptoJS.HmacSHA1(policy, ACCESSKEYSECRET).toString(CryptoJS.enc.Base64);
 
-    return { policy: policyBase64, signature: signature };
-  } catch (error) {
-    logTextList.value.push('获取上传签名失败');
-  }
-};
-
-// 上传文件到 OSS
-const uploadToOss = async (filePath, policy, signature) => {
-  logTextList.value.push('开始上传录音...');
-  try {
     const fileName = `${recordInfo.value.startTimestamp}.mp3`;
+
     return new Promise((resolve, reject) => {
       uni.uploadFile({
         url: OSSBUCKETURL,
@@ -194,29 +184,23 @@ const uploadToOss = async (filePath, policy, signature) => {
           policy: policy,
           signature: signature
         },
-        success: (res) => {
-          if (res.statusCode === 200) {
-            logTextList.value.push('音频文件上传成功');
-            resolve(fileName);
-          } else {
-            logTextList.value.push('音频文件上传失败');
-            reject(new Error('文件上传失败'));
-          }
+        success: async (res) => {
+          resolve(fileName);
         },
         fail: (err) => {
-          logTextList.value.push(`上传失败: ${err.errMsg || '未知错误'}`);
+          logTextList.value.push(`上传录音失败`);
           reject(err);
         }
       });
     });
   } catch (error) {
-    logTextList.value.push(`上传失败: ${error.message}`);
+    logTextList.value.push(`上传录音失败`);
   }
 };
 
-// 定义一个生成预签名 URL 的函数
-async function generateSignatureUrl(fileName) {
-  logTextList.value.push('生成文件访问链接...');
+/**生成在线链接 */
+const generateSignatureUrl = async (fileName) => {
+  logTextList.value.push('生成在线链接...');
   try {
     const client = new OSS({
       accessKeyId: ACCESSKEYID,
@@ -226,18 +210,16 @@ async function generateSignatureUrl(fileName) {
       secure: true,
       authorizationV4: true
     });
-
-    const url = await client.signatureUrlV4('GET', 3600, { headers: {} }, fileName);
-    logTextList.value.push('生成访问链接成功');
-    return url;
+    const signatureUrl = await client.signatureUrlV4('GET', 3600, { headers: {} }, fileName);
+    return signatureUrl;
   } catch (error) {
-    logTextList.value.push(`生成访问链接失败: ${error.message}`);
+    logTextList.value.push('生成在线链接失败');
   }
-}
+};
 
-// 创建转写任务
+/**创建转录任务 */
 const createTask = async (audioUrl) => {
-  logTextList.value.push('创建转写任务...');
+  logTextList.value.push('创建转录任务...');
   try {
     // 1. 构建请求参数
     const date = new Date();
@@ -254,7 +236,7 @@ const createTask = async (audioUrl) => {
         Transcription: {
           DiarizationEnabled: true,
           Diarization: {
-            SpeakerCount: 0
+            SpeakerCount: 0 // 0：说话人角色区分结果为不定人数。 2：说话人角色区分结果为 2 人。
           }
         }
       }
@@ -349,19 +331,18 @@ const createTask = async (audioUrl) => {
     });
 
     if (response.statusCode === 200) {
-      logTextList.value.push('创建转写任务成功');
       return response.data.Data.TaskId;
     } else {
-      logTextList.value.push(`创建任务失败: ${response.data.Message || '未知错误'}`);
+      logTextList.value.push(`创建转录任务失败`);
     }
   } catch (error) {
-    logTextList.value.push(`创建任务失败: ${error.message}`);
+    logTextList.value.push(`创建转录任务失败`);
   }
 };
 
-// 获取任务信息
+/**查询转录任务结果 */
 const getTaskInfo = async (taskId) => {
-  logTextList.value.push('获取任务信息...');
+  // logTextList.value.push('查询转录任务结果...');
   try {
     // 1. 构建请求参数
     const date = new Date();
@@ -450,40 +431,19 @@ const getTaskInfo = async (taskId) => {
       }
     });
 
-    if (response.statusCode === 200 && response.data.Code == '0') {
-      logTextList.value.push('获取任务信息成功');
+    if (response.statusCode === 200) {
       return response.data.Data;
     } else {
-      logTextList.value.push(`获取任务信息失败: ${response.data.Message || '未知错误'}`);
+      logTextList.value.push(`查询转录状态失败`);
     }
   } catch (error) {
-    logTextList.value.push(`获取任务信息失败: ${error.message}`);
+    logTextList.value.push(`查询转录状态失败`);
   }
 };
 
-// 获取转写结果
-const fetchTranscriptionResult = async (url) => {
-  logTextList.value.push('获取转写结果...');
-  try {
-    const response = await uni.request({
-      url: url,
-      method: 'GET'
-    });
-
-    if (response.statusCode === 200) {
-      logTextList.value.push('获取转写结果成功');
-      return response.data;
-    } else {
-      logTextList.value.push('获取转写结果失败');
-    }
-  } catch (error) {
-    logTextList.value.push(`获取转写结果失败: ${error.message}`);
-  }
-};
-
-// 检查任务结果
+/**查询转录状态 */
 const checkResult = async (taskId) => {
-  logTextList.value.push('检查任务结果...');
+  logTextList.value.push('查询转录状态...');
   try {
     let status = 'RUNNING';
     let maxRetries = 10; // 最大重试次数
@@ -495,80 +455,93 @@ const checkResult = async (taskId) => {
       status = result.TaskStatus || result.Status;
 
       if (status === 'SUCCESS' || status === 'COMPLETED') {
-        // 任务成功，处理结果
-        logTextList.value.push('转写任务完成');
-
         // 如果有转写结果URL，需要下载结果
         if (result.Result && result.Result.Transcription) {
           const transcriptionUrl = result.Result.Transcription;
-          transcriptionResult.value = await fetchTranscriptionResult(transcriptionUrl);
-
-          // 更新存储
-          let recordList = uni.getStorageSync('recordList') || [];
-          const newRecordList = recordList.map((record) => {
-            if (record.startTimestamp === recordInfo.value.startTimestamp) {
-              record.transcriptionResult = transcriptionResult.value;
-            }
-            return record;
-          });
-
-          uni.setStorageSync('recordList', newRecordList);
+          return transcriptionUrl;
         }
-
-        audioToTextLoading.value = false;
-        return result;
       } else if (status === 'FAILED') {
-        // 任务失败
-        logTextList.value.push(`转写失败: ${result.StatusText || '未知错误'}`);
+        logTextList.value.push(`转录失败`);
       } else {
         // 任务仍在进行中，等待后再次查询
-        logTextList.value.push(`转写中...`);
+        logTextList.value.push(`再次查询转录状态...`);
         await new Promise((resolve) => setTimeout(resolve, 3000)); // 等待3秒
         retryCount++;
       }
     }
 
     if (retryCount >= maxRetries) {
-      logTextList.value.push('转写超时，请稍后再试');
+      logTextList.value.push('转录超时，请稍后再试');
     }
   } catch (error) {
-    audioToTextLoading.value = false;
-    logTextList.value.push(`转换失败: ${error.message}`);
-    throw error;
+    logTextList.value.push(`转录失败`);
   }
 };
 
-// 处理开始转文字按钮点击
+/**查询转录结果 */
+const fetchTranscriptionResult = async (transcriptionUrl) => {
+  logTextList.value.push('查询转录结果...');
+  try {
+    const response = await uni.request({
+      url: transcriptionUrl,
+      method: 'GET'
+    });
+
+    if (response.statusCode === 200) {
+      transcriptionResult.value = response.data;
+      // 更新存储
+      let recordList = uni.getStorageSync('recordList') || [];
+      const newRecordList = recordList.map((record) => {
+        if (record.startTimestamp === recordInfo.value.startTimestamp) {
+          record.transcriptionResult = transcriptionResult.value;
+        }
+        return record;
+      });
+
+      uni.setStorageSync('recordList', newRecordList);
+
+      logTextList.value.push('转录成功');
+    } else {
+      logTextList.value.push('转录失败');
+    }
+  } catch (error) {
+    logTextList.value.push(`转录失败`);
+  }
+};
+
+/**开始转录 */
 const handleAudioToText = async () => {
   audioToTextLoading.value = true;
   logTextList.value = [];
-  logTextList.value.push('开始转文字...');
+  logTextList.value.push('开始转录...');
 
   try {
     // 1. 获取 AccessToken
     await getAccessToken();
 
-    // 2. 获取 OSS 签名
-    const { policy, signature } = await getOssSignature();
+    // 2. 上传录音到 OSS，获取文件名称
+    const fileName = await uploadToOss(recordInfo.value.filePath);
 
-    // 3. 上传音频到 OSS，获取文件名称
-    const fileName = await uploadToOss(recordInfo.value.filePath, policy, signature);
-
-    // 4. 生成预签名 URL
+    // 3. 生成在线链接
     const signatureUrl = await generateSignatureUrl(fileName);
 
-    // 5. 创建转写任务
+    // 4. 创建转录任务
     const taskId = await createTask(signatureUrl);
 
-    // 6. 轮询获取结果
-    await checkResult(taskId);
+    // 5. 轮询查询结果
+    const transcriptionUrl = await checkResult(taskId);
+
+    // 6. 查询转录结果
+    await fetchTranscriptionResult(transcriptionUrl);
+
+    audioToTextLoading.value = false;
   } catch (error) {
     audioToTextLoading.value = false;
-    logTextList.value.push(`转换失败: ${error.message}`);
+    logTextList.value.push(`转录失败`);
   }
 };
 
-// 跳转到转写结果页面
+// 跳转到转录结果页面
 const toTranscriptionResultPage = () => {
   uni.navigateTo({
     url: '/pages/transcription-result/index?id=' + recordInfo.value.startTimestamp
@@ -602,38 +575,13 @@ const handleGoBack = () => {
   image {
     width: 100px;
   }
-  text {
+  .log-list {
     font-family: Avenir;
     font-weight: 300;
     font-size: 16px;
     color: #616161;
     margin-top: 10px;
-  }
-
-  .log-list {
-    margin-top: 20px;
-    width: 80%;
-    max-height: 150px;
-    overflow-y: auto;
-
-    text {
-      display: block;
-      font-size: 14px;
-      margin: 5px 0;
-      text-align: left;
-
-      &.error {
-        color: #ff4d4f;
-      }
-
-      &.success {
-        color: #52c41a;
-      }
-
-      &.info {
-        color: #1890ff;
-      }
-    }
+    text-align: center;
   }
 }
 
