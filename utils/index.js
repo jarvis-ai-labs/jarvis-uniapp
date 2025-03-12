@@ -1,4 +1,4 @@
-export function formatDate(strDate, strFormat = 'yyyy/MM/dd HH:mm') {
+export function formatDate(strDate, strFormat = 'yyyy/MM/dd HH:mm:ss') {
   if (!strDate) return;
   if (typeof strDate == 'string') {
     strDate = new Date(strDate.replace(/-/g, '/'));
@@ -23,6 +23,43 @@ export function formatDate(strDate, strFormat = 'yyyy/MM/dd HH:mm') {
       return dict[m];
     });
   }
+}
+
+export function formatDuration(ms) {
+  let ss = ms % 1000;
+  ms = (ms - ss) / 1000;
+  let s = ms % 60;
+  ms = (ms - s) / 60;
+  let m = ms % 60;
+  ms = (ms - m) / 60;
+  let h = ms,
+    v = '';
+  if (h > 0) v += (h < 10 ? '0' : '') + h + ':';
+  v += (m < 10 ? '0' : '') + m + ':';
+  v += (s < 10 ? '0' : '') + s;
+  return v;
+}
+
+export function formatFileName(timestamp) {
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hour = String(date.getHours()).padStart(2, '0');
+  const minute = String(date.getMinutes()).padStart(2, '0');
+  const second = String(date.getSeconds()).padStart(2, '0');
+
+  return `Jarvis-录音-${year}年${month}月${day}日${hour}时${minute}分${second}秒`;
+}
+
+export function formatFileSize(bytes) {
+  if (bytes === 0) return '0 B';
+
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 export function handleCopy(value) {

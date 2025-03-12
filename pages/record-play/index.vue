@@ -1,20 +1,9 @@
 <template>
   <view class="container">
-    <uni-nav-bar
-      shadow
-      fixed
-      status-bar
-      :border="false"
-      height="50px"
-      left-icon="back"
-      left-text="文件"
-      @clickLeft="handleGoBack">
-      <!-- right-width="100px" -->
+    <uni-nav-bar dark fixed status-bar :border="false" height="50px" left-icon="back" @clickLeft="handleGoBack">
       <template #right>
         <view class="record-play-nav-bar">
           <text @click="toAudioToTextPage">转文字</text>
-          <!-- <text>分享</text> -->
-          <!-- <uni-icons type="more-filled" size="20" color="#000000" /> -->
         </view>
       </template>
     </uni-nav-bar>
@@ -24,8 +13,8 @@
         <view class="record-info">
           <view class="file-name">{{ recordInfo.fileName }}</view>
           <view class="record-time">
-            <view class="time">{{ recordInfo.duration }}</view>
-            <view class="time2">{{ recordInfo.startTime }}</view>
+            <view class="time">{{ recordInfo.durationText }}</view>
+            <view class="time2">{{ recordInfo.startTimeText }}</view>
           </view>
         </view>
 
@@ -33,22 +22,23 @@
 
         <view class="player-controls">
           <slider
-            activeColor="#5FA9FF"
-            backgroundColor="#DFE8F5"
+            activeColor="#2670E9"
+            backgroundColor="#6B6B6B99"
             block-size="12"
-            block-color="#5FA9FF"
+            block-color="#2670E9"
             :value="progress"
             @change="onSliderChange" />
           <view class="time">
             <text>{{ currentTime }}</text>
-            <text>{{ recordInfo.duration }}</text>
+            <text>{{ recordInfo.durationText }}</text>
           </view>
+
           <view class="control-buttons">
             <uni-icons
               custom-prefix="iconfont"
               :type="isPlaying ? 'icon-pause' : 'icon-play'"
               size="50"
-              color="#555555"
+              color="#AFAFAF"
               @click="handlePlay" />
           </view>
         </view>
@@ -73,10 +63,11 @@ onLoad((options) => {
     return;
   }
 
-  const recordList = uni.getStorageSync('recordList') || [];
+  const recordList = uni.getStorageSync('jarvis-record') || [];
   if (recordList.length > 0) {
     recordInfo.value = recordList.find((item) => item.startTimestamp == options.id);
     if (recordInfo.value) initAudioPlayer();
+    console.log('录音详情', recordInfo.value);
   }
 });
 
@@ -215,8 +206,9 @@ const toAudioToTextPage = () => {
   width: 100%;
   height: calc(100vh - 125px);
   border-radius: 24px;
-  background: #ffffff;
-  box-shadow: 0 0 8px 2px rgba(140, 145, 151, 0.15);
+  background: linear-gradient(0deg, rgba(175, 175, 175, 0.2), rgba(175, 175, 175, 0.2)),
+    radial-gradient(16.39% 7.56% at 0% 5.55%, #007aff 0%, rgba(61, 62, 61, 0) 100%)
+      /* warning: gradient uses a rotation that is not supported by CSS and may not behave as expected */;
   padding: 10px;
   display: flex;
   flex-direction: column;
@@ -231,28 +223,25 @@ const toAudioToTextPage = () => {
 
 .player-controls {
   width: 100%;
-  background: #edf2f8;
-  border-radius: 18px;
-  padding: 10px;
-
+  margin-bottom: 30px;
   .time {
     display: flex;
     align-items: center;
     justify-content: space-between;
     font-family: Avenir;
-    font-size: 16px;
+    font-size: 14px;
     color: #979797;
   }
 
   .control-buttons {
+    width: 100%;
+    height: 50px;
+    background: #6b6b6b99;
+    border-radius: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
-    .play-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+    margin-top: 20px;
   }
 }
 </style>

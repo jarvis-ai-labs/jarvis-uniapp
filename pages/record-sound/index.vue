@@ -1,7 +1,7 @@
 <template>
   <view>
     <view class="container">
-      <uni-nav-bar shadow fixed status-bar :border="false" height="50px" title="正在录音" />
+      <uni-nav-bar dark fixed status-bar :border="false" height="50px" title="正在录音" />
 
       <view class="container-box">
         <view class="record-sound-box">
@@ -15,19 +15,14 @@
           <view class="record-box">
             <!-- 可视化绘制 -->
             <view class="recwave-box">
-              <!-- <view class="recwave-progress">
-                <view class="recwave-progress-bar" :style="{ width: recpowerx + '%' }"></view>
-                <view class="recwave-progress-text">{{ recpowert }}</view>
-              </view> -->
-
               <canvas type="2d" class="recwave-WaveView"></canvas>
-            </view>
-            <view class="record-time">
-              <text>{{ recpowertTime }}</text>
             </view>
           </view>
 
           <view class="record-control">
+            <view class="record-time">
+              <text>{{ recpowertTime }}</text>
+            </view>
             <button class="start-pause-btn" @click="handleStartPause">
               <uni-icons
                 custom-prefix="iconfont"
@@ -81,26 +76,14 @@ import 'recorder-core/src/app-support/app-miniProgram-wx-support.js';
 
 import { ref, getCurrentInstance, onMounted, onUnmounted } from 'vue';
 import { onShow, onBackPress } from '@dcloudio/uni-app';
-import { formatDate } from '@/utils';
+import { formatDate, formatFileName, formatDuration } from '@/utils';
 
 import permision from '@/js_sdk/wa-permission/permission.js';
 
 const startTimestamp = Date.now();
-const formatFileName = (timestamp) => {
-  const date = new Date(timestamp);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hour = String(date.getHours()).padStart(2, '0');
-  const minute = String(date.getMinutes()).padStart(2, '0');
-
-  return `Jarvis-录音-${year}年${month}月${day}日${hour}时${minute}分`;
-};
 const fileName = formatFileName(startTimestamp);
 
 const isRecording = ref(false);
-const recpowerx = ref(0);
-const recpowert = ref('');
 const recpowertTime = ref('');
 const reclogs = ref([]);
 
@@ -116,22 +99,6 @@ const reclog = (msg, color) => {
     ('0' + now.getSeconds()).substr(-2);
   let txt = '[' + t + ']' + msg;
   reclogs.value.splice(0, 0, { txt: txt, color: color });
-};
-
-const formatTime = (ms, showSS) => {
-  let ss = ms % 1000;
-  ms = (ms - ss) / 1000;
-  let s = ms % 60;
-  ms = (ms - s) / 60;
-  let m = ms % 60;
-  ms = (ms - m) / 60;
-  let h = ms,
-    v = '';
-  if (h > 0) v += (h < 10 ? '0' : '') + h + ':';
-  v += (m < 10 ? '0' : '') + m + ':';
-  v += (s < 10 ? '0' : '') + s;
-  if (showSS) v += '″' + ('00' + ss).substr(-3);
-  return v;
 };
 
 onBackPress((options) => {
@@ -223,9 +190,7 @@ const recStart = () => {
       bitRate: 16,
 
       onProcess: (buffers, powerLevel, duration, sampleRate, newBufferIdx, asyncEnd) => {
-        recpowerx.value = powerLevel;
-        recpowert.value = formatTime(duration, 1) + ' / ' + powerLevel;
-        recpowertTime.value = formatTime(duration, 0);
+        recpowertTime.value = formatDuration(duration);
 
         // H5、小程序等可视化图形绘制
         // #ifdef H5 || MP-WEIXIN
@@ -271,9 +236,9 @@ const recStart = () => {
       RecordApp.UniFindCanvas(
         vue3This,
         ['.recwave-WaveView'],
-        `this.waveView=Recorder.WaveView({compatibleCanvas:canvas1, width:300, height:250});`,
+        `this.waveView=Recorder.WaveView({compatibleCanvas:canvas1, width:300, height:300});`,
         (canvas1) => {
-          vue3This.waveView = Recorder.WaveView({ compatibleCanvas: canvas1, width: 300, height: 250 });
+          vue3This.waveView = Recorder.WaveView({ compatibleCanvas: canvas1, width: 300, height: 300 });
         }
       );
     },
@@ -311,7 +276,7 @@ const recStop = () => {
         '已录制[' +
           mime +
           ']：' +
-          formatTime(duration, 1) +
+          formatDuration(duration) +
           ' ' +
           arrayBuffer.byteLength +
           '字节 ' +
@@ -328,7 +293,6 @@ const recStop = () => {
         arrayBuffer,
         (savePath) => {
           console.log('保存录音成功:', savePath);
-          arrayBuffer;
 
           const audioBase64 = uni.arrayBufferToBase64(arrayBuffer);
 
@@ -340,19 +304,22 @@ const recStop = () => {
 
               const recordInfo = {
                 fileName,
+                mime,
+                duration,
+                durationText: formatDuration(duration),
                 startTimestamp,
-                startTime: formatDate(startTimestamp),
-                duration: formatTime(duration, 0),
+                startTimeText: formatDate(startTimestamp),
+                arrayBuffer,
+                size: arrayBuffer.byteLength,
+                audioBase64,
                 filePath: savedFilePath,
                 tempFilePath: savePath,
-                arrayBuffer,
-                audioBase64,
                 transcriptionResult: null
               };
 
-              let recordList = uni.getStorageSync('recordList') || [];
+              let recordList = uni.getStorageSync('jarvis-record') || [];
               recordList.unshift(recordInfo);
-              uni.setStorageSync('recordList', recordList);
+              uni.setStorageSync('jarvis-record', recordList);
 
               uni.navigateTo({
                 url: '/pages/record-play/index?id=' + startTimestamp
@@ -475,8 +442,9 @@ const tryClose_androidNotifyService = () => {
   width: 100%;
   height: calc(100vh - 125px);
   border-radius: 24px;
-  background: #ffffff;
-  box-shadow: 0 0 8px 2px rgba(140, 145, 151, 0.15);
+  background: linear-gradient(0deg, rgba(175, 175, 175, 0.2), rgba(175, 175, 175, 0.2)),
+    radial-gradient(16.39% 7.56% at 0% 5.55%, #007aff 0%, rgba(61, 62, 61, 0) 100%)
+      /* warning: gradient uses a rotation that is not supported by CSS and may not behave as expected */;
   padding: 10px;
   display: flex;
   flex-direction: column;
@@ -487,7 +455,6 @@ const tryClose_androidNotifyService = () => {
   width: 100%;
   height: calc(100vh - 264px);
   position: relative;
-  background: #ffffff;
 
   .recwave-progress {
     height: 40px;
@@ -513,31 +480,15 @@ const tryClose_androidNotifyService = () => {
     .recwave-SurferView,
     .recwave-SurferView-2x {
       width: 100%;
-      height: 250px;
+      height: 300px;
     }
-  }
-
-  .record-time {
-    width: fit-content;
-    padding: 5px 10px;
-    background: #afafb1;
-    border-radius: 10px;
-    position: absolute;
-    bottom: 30px;
-    left: 0;
-    right: 0;
-    margin: auto;
-    font-family: Avenir;
-    font-size: 16px;
-    font-weight: bold;
-    color: #ffffff;
   }
 }
 
 .record-control {
   width: 100%;
   height: 100px;
-  background: #edf2f8;
+  background: #6b6b6b99;
   border-radius: 18px;
   display: flex;
   align-items: center;
@@ -552,7 +503,7 @@ const tryClose_androidNotifyService = () => {
     width: 60px;
     height: 60px;
     border-radius: 50%;
-    background-color: #5fa9ff;
+    background: #4189ff;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -560,15 +511,24 @@ const tryClose_androidNotifyService = () => {
   }
 
   .stop-btn {
-    width: 30px;
-    height: 30px;
+    width: 40px;
+    height: 40px;
     border-radius: 10px;
-    background-color: #5fa9ff;
+    background: #4189ff;
     display: flex;
     align-items: center;
     justify-content: center;
     position: absolute;
-    right: 60px;
+    right: 40px;
+  }
+
+  .record-time {
+    position: absolute;
+    left: 40px;
+    font-family: Avenir;
+    font-size: 16px;
+    font-weight: bold;
+    color: #4189ff;
   }
 }
 </style>

@@ -1,14 +1,13 @@
 <template>
   <view class="container">
     <uni-nav-bar
-      shadow
+      dark
       fixed
       status-bar
       :border="false"
       height="50px"
-      title="语音转文字"
+      title="录音转文字"
       left-icon="back"
-      left-text="文件"
       @clickLeft="handleGoBack" />
 
     <view class="container-box">
@@ -16,14 +15,14 @@
         <view class="record-info" v-if="recordInfo">
           <view class="file-name">{{ recordInfo.fileName }}</view>
           <view class="record-time">
-            <view class="time">{{ recordInfo.duration }}</view>
-            <view class="time2">{{ recordInfo.startTime }}</view>
+            <view class="time">{{ recordInfo.durationText }}</view>
+            <view class="time2">{{ recordInfo.startTimeText }}</view>
           </view>
         </view>
         <view class="transcription-text-content">
-          <image mode="widthFix" src="/static/logo2-active.png" />
-          <view class="log-list" v-if="logTextList.length > 0">
-            <view v-for="(log, index) in logTextList" :key="index">{{ log }}</view>
+          <image mode="heightFix" src="/static/logo2.png" />
+          <view class="log-list">
+            <view v-for="(log, index) in displayLogs" :key="index">{{ log }}</view>
           </view>
         </view>
         <view class="transcription-text-btn-box">
@@ -40,7 +39,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import CryptoJS from 'crypto-js';
 import OSS from 'ali-oss';
@@ -62,21 +61,29 @@ const transcriptionResult = ref(null);
 const audioToTextLoading = ref(false);
 const logTextList = ref([]);
 
+// 计算属性，只显示最新的5条日志
+const displayLogs = computed(() => {
+  const maxLogs = 5;
+  if (logTextList.value.length <= maxLogs) {
+    return logTextList.value;
+  }
+  return logTextList.value.slice(logTextList.value.length - maxLogs);
+});
+
 onLoad(async (options) => {
   if (!options?.id) {
     uni.showToast({ title: '文件ID无效', icon: 'error', duration: 2000 });
     return;
   }
 
-  const recordList = uni.getStorageSync('recordList') || [];
+  const recordList = uni.getStorageSync('jarvis-record') || [];
   if (recordList.length > 0) {
     recordInfo.value = recordList.find((item) => item.startTimestamp == options.id);
   }
 });
 
-/**获取 Token 令牌 */
+/**获取授权令牌 */
 const getAccessToken = async () => {
-  logTextList.value.push('获取 Token 令牌...');
   // 检查 Token 是否有效
   accessToken.value = uni.getStorageSync(accessTokenKey);
   accessTokenExpire.value = parseInt(uni.getStorageSync(accessTokenExpireKey));
@@ -143,17 +150,15 @@ const getAccessToken = async () => {
       uni.setStorageSync(accessTokenKey, accessToken.value);
       uni.setStorageSync(accessTokenExpireKey, accessTokenExpire.value.toString());
     } else {
-      logTextList.value.push(`获取 Token 令牌失败`);
+      logTextList.value.push(`获取授权令牌失败`);
     }
   } catch (error) {
-    logTextList.value.push(`获取 Token 令牌失败`);
+    logTextList.value.push(`获取授权令牌失败`);
   }
 };
 
 /**上传录音 */
 const uploadToOss = async (filePath) => {
-  logTextList.value.push('上传录音...');
-
   try {
     const date = new Date();
     date.setHours(date.getHours() + 1);
@@ -170,7 +175,7 @@ const uploadToOss = async (filePath) => {
     const policy = btoa(JSON.stringify(policyObj));
     const signature = CryptoJS.HmacSHA1(policy, ACCESSKEYSECRET).toString(CryptoJS.enc.Base64);
 
-    const fileName = `${recordInfo.value.startTimestamp}.mp3`;
+    const fileName = `${recordInfo.value.fileName}.mp3`;
 
     return new Promise((resolve, reject) => {
       uni.uploadFile({
@@ -200,7 +205,6 @@ const uploadToOss = async (filePath) => {
 
 /**生成在线链接 */
 const generateSignatureUrl = async (fileName) => {
-  logTextList.value.push('生成在线链接...');
   try {
     const client = new OSS({
       accessKeyId: ACCESSKEYID,
@@ -219,7 +223,6 @@ const generateSignatureUrl = async (fileName) => {
 
 /**创建转录任务 */
 const createTask = async (audioUrl) => {
-  logTextList.value.push('创建转录任务...');
   try {
     // 1. 构建请求参数
     const date = new Date();
@@ -229,7 +232,7 @@ const createTask = async (audioUrl) => {
     const requestBody = {
       AppKey: TINGWU_APPKEY,
       Input: {
-        SourceLanguage: 'cn',
+        SourceLanguage: 'fspk', // fspk：中英文自由说
         FileUrl: audioUrl
       },
       Parameters: {
@@ -342,7 +345,6 @@ const createTask = async (audioUrl) => {
 
 /**查询转录任务结果 */
 const getTaskInfo = async (taskId) => {
-  // logTextList.value.push('查询转录任务结果...');
   try {
     // 1. 构建请求参数
     const date = new Date();
@@ -443,7 +445,6 @@ const getTaskInfo = async (taskId) => {
 
 /**查询转录状态 */
 const checkResult = async (taskId) => {
-  logTextList.value.push('查询转录状态...');
   try {
     let status = 'RUNNING';
     let maxRetries = 10; // 最大重试次数
@@ -480,17 +481,17 @@ const checkResult = async (taskId) => {
 
 /**查询转录结果 */
 const fetchTranscriptionResult = async (transcriptionUrl) => {
-  logTextList.value.push('查询转录结果...');
   try {
     const response = await uni.request({
       url: transcriptionUrl,
       method: 'GET'
     });
 
-    if (response.statusCode === 200) {
+    if (response.statusCode === 200 && response.data.Transcription.Paragraphs.length > 0) {
       transcriptionResult.value = response.data;
-      // 更新存储
-      let recordList = uni.getStorageSync('recordList') || [];
+      console.log('转录结果', transcriptionResult.value);
+
+      let recordList = uni.getStorageSync('jarvis-record') || [];
       const newRecordList = recordList.map((record) => {
         if (record.startTimestamp === recordInfo.value.startTimestamp) {
           record.transcriptionResult = transcriptionResult.value;
@@ -498,7 +499,7 @@ const fetchTranscriptionResult = async (transcriptionUrl) => {
         return record;
       });
 
-      uni.setStorageSync('recordList', newRecordList);
+      uni.setStorageSync('jarvis-record', newRecordList);
 
       logTextList.value.push('转录成功');
     } else {
@@ -517,21 +518,27 @@ const handleAudioToText = async () => {
 
   try {
     // 1. 获取 AccessToken
+    logTextList.value.push('获取授权令牌...');
     await getAccessToken();
 
     // 2. 上传录音到 OSS，获取文件名称
+    logTextList.value.push('上传录音...');
     const fileName = await uploadToOss(recordInfo.value.filePath);
 
     // 3. 生成在线链接
+    logTextList.value.push('生成在线链接...');
     const signatureUrl = await generateSignatureUrl(fileName);
 
     // 4. 创建转录任务
+    logTextList.value.push('创建转录任务...');
     const taskId = await createTask(signatureUrl);
 
     // 5. 轮询查询结果
+    logTextList.value.push('查询转录状态...');
     const transcriptionUrl = await checkResult(taskId);
 
     // 6. 查询转录结果
+    logTextList.value.push('查询转录结果...');
     await fetchTranscriptionResult(transcriptionUrl);
 
     audioToTextLoading.value = false;
@@ -559,8 +566,9 @@ const handleGoBack = () => {
   width: 100%;
   height: calc(100vh - 125px);
   border-radius: 24px;
-  background: #ffffff;
-  box-shadow: 0 0 8px 2px rgba(140, 145, 151, 0.15);
+  background: linear-gradient(0deg, rgba(175, 175, 175, 0.2), rgba(175, 175, 175, 0.2)),
+    radial-gradient(16.39% 7.56% at 0% 5.55%, #007aff 0%, rgba(61, 62, 61, 0) 100%)
+      /* warning: gradient uses a rotation that is not supported by CSS and may not behave as expected */;
   padding: 10px;
   display: flex;
   flex-direction: column;
@@ -573,9 +581,12 @@ const handleGoBack = () => {
   align-items: center;
   justify-content: center;
   image {
-    width: 100px;
+    width: auto;
+    height: 120px;
   }
   .log-list {
+    width: 100%;
+    height: 120px;
     font-family: Avenir;
     font-weight: 300;
     font-size: 16px;
@@ -587,16 +598,16 @@ const handleGoBack = () => {
 
 .transcription-text-btn-box {
   height: 40px;
-  margin-bottom: 50px;
+  margin-bottom: 30px;
   .transcription-text-btn {
     width: 150px;
     height: 40px;
     border-radius: 20px;
-    background: #dae7f2;
+    background: #606060;
     font-family: Avenir;
     font-weight: 300;
     font-size: 16px;
-    color: #004685;
+    color: #ffffff;
   }
 }
 </style>

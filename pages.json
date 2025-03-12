@@ -43,18 +43,16 @@
       }
     }
   ],
-
   "globalStyle": {
-    "navigationBarTextStyle": "black",
     "navigationBarTitleText": "Jarvis",
-    "navigationBarBackgroundColor": "#F8F8F8"
+    "transparentTitle": "auto"
   },
   "uniIdRouter": {},
   "tabBar": {
-    "color": "#222222",
-    "selectedColor": "#001AA2",
+    "color": "#FFFFFF",
+    "selectedColor": "#2670E9",
+    "backgroundColor": "#474747",
     "borderStyle": "black",
-    "backgroundColor": "#ffffff",
     "list": [
       {
         "pagePath": "pages/file/index",

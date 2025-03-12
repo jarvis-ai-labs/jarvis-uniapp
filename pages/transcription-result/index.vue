@@ -1,13 +1,13 @@
 <template>
   <view class="container">
     <uni-nav-bar
-      shadow
+      dark
       fixed
       status-bar
       :border="false"
       height="50px"
+      title="文字"
       left-icon="back"
-      left-text="文件"
       @clickLeft="handleGoBack" />
 
     <view class="container-box">
@@ -25,8 +25,8 @@
           <view class="record-info">
             <view class="file-name">{{ recordInfo.fileName }}</view>
             <view class="record-time">
-              <view class="time">{{ recordInfo.duration }}</view>
-              <view class="time2">{{ recordInfo.startTime }}</view>
+              <view class="time">{{ recordInfo.durationText }}</view>
+              <view class="time2">{{ recordInfo.startTimeText }}</view>
             </view>
           </view>
 
@@ -47,7 +47,7 @@
               <ua-markdown :source="result.result || ''" />
             </view>
             <view class="bottombox">
-              <uni-icons type="redo" size="20" @click="handleOpenShare(result)"></uni-icons>
+              <uni-icons type="redo" size="20" color="#fff" @click="handleOpenShare(result)"></uni-icons>
               <text @click="handleRegenerate(result)">重新生成</text>
             </view>
           </view>
@@ -59,26 +59,26 @@
           <view class="btn-list" v-if="showRemainingTask">
             <view class="btn-item" v-for="item in newTaskList" :key="item.id" @click="handleClickTask(item)">
               <text>{{ item.name }}</text>
-              <uni-icons type="right" size="16"></uni-icons>
+              <uni-icons type="right" size="16" color="#A9A9A9"></uni-icons>
             </view>
           </view>
         </template>
       </view>
     </view>
     <uni-popup ref="shareDom" background-color="#EBEBEB" borderRadius="20px 20px 0 0">
-      <view class="share-box">
+      <view class="popup-bottom-box">
         <view class="title">分享</view>
         <view class="share-list">
           <view class="share-item" @click="handleExportWord()">
-            <image mode="aspectFill" src="/static/images/icon-word.png" />
+            <image mode="heightFix" src="/static/images/icon-word.png" />
             <text>Word文件</text>
           </view>
           <view class="share-item" @click="handleExportTxt()">
-            <image mode="aspectFill" src="/static/images/icon-txt.png" />
+            <image mode="heightFix" src="/static/images/icon-txt.png" />
             <text>TXT文件</text>
           </view>
           <view class="share-item" @click="handleCopyText()">
-            <image mode="aspectFill" src="/static/images/icon-copy.png" />
+            <image mode="heightFix" src="/static/images/icon-copy.png" />
             <text>复制文字</text>
           </view>
         </view>
@@ -88,11 +88,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { GetSupportedTasks, ProcessTextTask } from '@/api/api';
 import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
+import { getAudioToTextExample } from '@/utils';
 
 const shareDom = ref(null);
 const currentTab = ref('transcription-results');
@@ -110,14 +111,14 @@ onLoad((options) => {
     return;
   }
 
-  const recordList = uni.getStorageSync('recordList') || [];
+  const recordList = uni.getStorageSync('jarvis-record') || [];
   if (recordList.length > 0) {
     recordInfo.value = recordList.find((item) => item.startTimestamp == options.id);
     console.log('当前录音', recordInfo.value);
     if (recordInfo.value) {
       getTaskList();
       paragraphs.value = recordInfo.value.transcriptionResult.Transcription.Paragraphs;
-      console.log('段落', paragraphs.value);
+      console.log('录音段落', paragraphs.value);
     }
   }
 });
@@ -144,14 +145,16 @@ const processTask = async (item, isRegenerate = false) => {
   }
 
   let text = '';
-  paragraphs.value.forEach((item) => {
-    text += `说话人${item.SpeakerId}：`;
-    item.Words.forEach((word) => {
-      text += word.Text;
-    });
-    text += '\n';
-  });
-  console.log('text', text);
+  // paragraphs.value.forEach((item) => {
+  //   text += `说话人${item.SpeakerId}：`;
+  //   item.Words.forEach((word) => {
+  //     text += word.Text;
+  //   });
+  //   text += '\n';
+  // });
+  // console.log('ProcessTextTask', item.name, text);
+
+  text = getAudioToTextExample();
 
   try {
     const res = await ProcessTextTask(item.name, text);
@@ -290,59 +293,44 @@ const handleCopyText = () => {
   width: 100%;
   min-height: calc(100vh - 125px);
   border-radius: 24px;
-  background: #ffffff;
-  box-shadow: 0 0 8px 2px rgba(140, 145, 151, 0.15);
+  background: linear-gradient(0deg, rgba(175, 175, 175, 0.2), rgba(175, 175, 175, 0.2)),
+    radial-gradient(16.39% 7.56% at 0% 5.55%, #007aff 0%, rgba(61, 62, 61, 0) 100%)
+      /* warning: gradient uses a rotation that is not supported by CSS and may not behave as expected */;
   padding: 10px;
 }
 .tabs {
-  width: 100%;
-  background: #f9fafa;
+  width: fit-content;
+  background: #86868633;
+  border-radius: 40px;
+  margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-radius: 10px;
   margin-bottom: 10px;
-
   uni-button:after {
     border: none;
   }
-
   button {
-    width: 50%;
+    width: 120px;
     height: 40px;
-    background-color: #f9fafa;
+    background: transparent;
+    border-radius: 40px;
     font-family: Avenir;
     font-size: 16px;
-    color: #616161;
+    color: #949494;
     &.active {
-      border-radius: 10px;
-      background: #ededed;
-      color: #2a2a2a;
+      background: #8f8f8f33;
+      color: #ffffff;
     }
   }
 }
 
 .transcription-box {
-  background: #f9fafa;
-  border-radius: 20px;
-  padding: 20px;
+  padding: 10px 20px;
   font-family: Avenir;
   font-weight: 300;
   font-size: 14px;
-  color: #000;
-
-  .dialog-item {
-    margin-bottom: 5px;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-
-    .dialog-speaker {
-      font-weight: bold;
-      color: #81b82f;
-    }
-  }
+  color: #f0f0f0;
 }
 
 .btn-list {
@@ -350,38 +338,31 @@ const handleCopyText = () => {
     display: flex;
     align-items: center;
     width: 100%;
-    height: 40px;
-    border-radius: 10px;
+    height: 36px;
     font-family: Avenir;
     font-size: 16px;
-    color: #575757;
-    transition: background-color 0.3s ease;
-
-    &:active {
-      background-color: #f0f0f0;
-    }
+    color: #a9a9a9;
   }
 }
 
 .features {
-  background: #f9fafa;
+  background: #70707033;
   border-radius: 18px;
   margin-bottom: 20px;
   .topbox {
     padding: 10px;
-    border-bottom: 1px solid #dfe8f5;
+    border-bottom: 1px solid #343434;
     .title {
       font-family: Avenir;
       font-weight: 300;
       font-size: 16px;
-      color: #000000;
       margin-bottom: 10px;
     }
     .text {
       font-family: Avenir;
       font-weight: 300;
       font-size: 12px;
-      color: #616161;
+      color: #acacac;
     }
   }
   .bottombox {
@@ -399,52 +380,11 @@ const handleCopyText = () => {
 .btn-generate {
   width: 120px;
   height: 40px;
-  background: #dae7f2;
+  background: #9d9d9d66;
   border-radius: 20px;
   font-family: Avenir;
   font-weight: 300;
   font-size: 16px;
-  color: #004685;
-  transition: background-color 0.3s ease;
-
-  &:active {
-    background-color: #c0d4e5;
-  }
-}
-.share-box {
-  padding: 20px;
-  .title {
-    font-family: Avenir;
-    font-weight: 300;
-    font-size: 20px;
-    color: #222222;
-    margin-bottom: 20px;
-  }
-  .share-list {
-    width: 100%;
-    border-radius: 18px;
-    background: #ffffff;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    .share-item {
-      padding: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      image {
-        width: 30px;
-        height: 30px;
-        margin-bottom: 10px;
-      }
-      text {
-        font-family: Avenir;
-        font-weight: 300;
-        font-size: 14px;
-        color: #555555;
-      }
-    }
-  }
+  color: #ffffff;
 }
 </style>

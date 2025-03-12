@@ -1,44 +1,61 @@
 <template>
   <view class="container">
     <uni-nav-bar
-      shadow
+      dark
       fixed
       status-bar
       :border="false"
       height="50px"
-      title="文件"
-      left-icon="list"
-      right-icon="search"
       @clickLeft="handleClickLeft"
-      @clickRight="handleClickRight" />
+      @clickRight="handleClickRight">
+      <template #left>
+        <button class="list-btn">
+          <uni-icons type="list" size="18" color="#ffffff" />
+        </button>
+      </template>
+      <view class="logo-view">
+        <image mode="heightFix" src="/static/logo3.png" />
+      </view>
+      <template #right>
+        <button class="search-btn">
+          <uni-icons type="search" size="18" color="#ffffff" />
+        </button>
+      </template>
+    </uni-nav-bar>
 
     <view class="container-box">
       <view class="file-list" v-if="recordList.length > 0">
         <uni-swipe-action>
-          <uni-swipe-action-item v-for="item in recordList" :key="item.startTimestamp">
-            <view class="file-item" @click="toRecordPlayPage(item)">
-              <view class="file-item-left">
-                <view class="left-top">{{ item.fileName }}</view>
-                <view class="left-bottom">
-                  <view class="time">{{ item.duration }}</view>
-                  <view class="time2">{{ item.startTime }}</view>
+          <view class="file-item" v-for="item in recordList" :key="item.startTimestamp" @click="toRecordPlayPage(item)">
+            <uni-swipe-action-item>
+              <view class="file-item-box">
+                <view class="file-item-left">
+                  <view class="left-top">{{ item.fileName }}</view>
+                  <view class="left-bottom">
+                    <view class="time">{{ item.durationText }}</view>
+                    <view class="time2">{{ item.startTimeText }}</view>
+                  </view>
+                </view>
+                <view class="file-item-right" v-if="item.transcriptionResult">
+                  <button class="file-item-button" @click.stop="toFileDetailPage(item)">文字</button>
                 </view>
               </view>
-              <view class="file-item-right" v-if="item.transcriptionResult">
-                <button class="file-item-button" @click.stop="toFileDetailPage(item)">文字</button>
-              </view>
-            </view>
 
-            <template #right>
-              <view class="more-button-box">
-                <!-- <button class="more-button more-button-1">
-                  <uni-icons type="more-filled" size="20" color="#000000" />
-                </button> -->
-                <button class="more-button more-button-2" @click="handleRename(item)">重命名</button>
-                <button class="more-button more-button-3" @click="handleDelete(item)">删除</button>
-              </view>
-            </template>
-          </uni-swipe-action-item>
+              <template #right>
+                <view class="more-button-box">
+                  <button class="more-button more-button-1" @click.stop="handleFileInfo(item)">
+                    <uni-icons type="more-filled" size="20" color="#ffffff" />
+                  </button>
+                  <button class="more-button more-button-2" @click.stop="handleRename(item)">
+                    <uni-icons type="compose" size="20" color="#ffffff" />
+                  </button>
+                  <button class="more-button more-button-3" @click.stop="handleDelete(item)">
+                    <uni-icons type="trash-filled" size="20" color="#ffffff" />
+                  </button>
+                </view>
+              </template>
+            </uni-swipe-action-item>
+          </view>
         </uni-swipe-action>
       </view>
 
@@ -67,6 +84,34 @@
           @confirm="renameDialogConfirm"
           @close="renameDialogClose"></uni-popup-dialog>
       </uni-popup>
+
+      <uni-popup ref="fileInfoDom" background-color="#D2D2D2CC" borderRadius="20px 20px 0 0">
+        <view class="popup-bottom-box">
+          <view class="title">文件信息</view>
+          <view class="text-box">
+            <view class="text">
+              <text>文件名：</text>
+              <text>{{ dialogInfo.fileName }}</text>
+            </view>
+            <view class="text">
+              <text>格式：</text>
+              <text>{{ dialogInfo.mime }}</text>
+            </view>
+            <view class="text">
+              <text>时长：</text>
+              <text>{{ dialogInfo.durationText }}</text>
+            </view>
+            <view class="text">
+              <text>大小：</text>
+              <text>{{ formatFileSize(dialogInfo.size) }}</text>
+            </view>
+            <view class="text">
+              <text>创建时间：</text>
+              <text>{{ dialogInfo.startTimeText }}</text>
+            </view>
+          </view>
+        </view>
+      </uni-popup>
     </view>
   </view>
 </template>
@@ -74,15 +119,17 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
+import { formatFileSize } from '@/utils';
 
 const recordList = ref([]);
 const dialogInfo = ref(null);
 const deleteDialog = ref(null);
 const renameDialog = ref(null);
+const fileInfoDom = ref(null);
 const renameInput = ref('');
 
 onShow(() => {
-  recordList.value = uni.getStorageSync('recordList') || [];
+  recordList.value = uni.getStorageSync('jarvis-record') || [];
   console.log('APP本地录音列表', recordList.value);
 });
 
@@ -96,6 +143,11 @@ const toFileDetailPage = (item) => {
   uni.navigateTo({
     url: '/pages/transcription-result/index?id=' + item.startTimestamp
   });
+};
+
+const handleFileInfo = (item) => {
+  dialogInfo.value = item;
+  fileInfoDom.value.open('bottom');
 };
 
 const handleRename = (item) => {
@@ -116,7 +168,7 @@ const renameDialogConfirm = () => {
     }
     return record;
   });
-  uni.setStorageSync('recordList', recordList.value);
+  uni.setStorageSync('jarvis-record', recordList.value);
   renameDialog.value.close();
 };
 
@@ -126,7 +178,7 @@ const renameDialogClose = () => {
 
 const deleteDialogConfirm = () => {
   recordList.value = recordList.value.filter((record) => record.startTimestamp !== dialogInfo.value.startTimestamp);
-  uni.setStorageSync('recordList', recordList.value);
+  uni.setStorageSync('jarvis-record', recordList.value);
   deleteDialog.value.close();
 };
 
@@ -137,7 +189,7 @@ const deleteDialogClose = () => {
 const handleClickLeft = () => {};
 
 const handleClickRight = () => {
-  uni.removeStorageSync('recordList');
+  uni.removeStorageSync('jarvis-record');
   recordList.value = [];
 };
 
@@ -147,56 +199,75 @@ const handleSoundRecording = () => {
 </script>
 
 <style lang="scss" scoped>
+.list-btn,
+.search-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #90909033;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.logo-view {
+  width: fit-content;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  image {
+    width: auto;
+    height: 36px;
+  }
+}
+
 .file-list {
   width: 100%;
-  border-radius: 24px;
-  background: #ffffff;
-  box-shadow: 0 0 8px 2px rgba(140, 145, 151, 0.15);
-  padding: 0 20px;
   .file-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #dae7f2;
-    padding: 20px 0;
-    &:last-child {
-      border-bottom: none;
-    }
-    .file-item-left {
-      width: calc(100% - 80px);
-      .left-top {
-        font-family: Avenir;
-        font-size: 16px;
-        color: #000;
-        margin-bottom: 10px;
-      }
-      .left-bottom {
-        display: flex;
-        justify-content: space-between;
-        .time {
+    width: 100%;
+    border-radius: 24px;
+    background: linear-gradient(0deg, rgba(175, 175, 175, 0.2), rgba(175, 175, 175, 0.2)), rgba(61, 62, 61, 0) 100%;
+    padding: 20px;
+    margin-bottom: 10px;
+    .file-item-box {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      .file-item-left {
+        width: calc(100% - 80px);
+        .left-top {
           font-family: Avenir;
-          font-size: 14px;
-          color: #000;
+          font-size: 16px;
+          margin-bottom: 10px;
         }
-        .time2 {
-          font-family: Avenir;
-          font-size: 14px;
-          color: #afafb1;
+        .left-bottom {
+          display: flex;
+          justify-content: space-between;
+          .time {
+            font-family: Avenir;
+            font-size: 14px;
+          }
+          .time2 {
+            font-family: Avenir;
+            font-size: 14px;
+          }
         }
       }
-    }
-    .file-item-right {
-      .file-item-button {
-        width: 60px;
-        height: 40px;
-        background: #edf0f7;
-        border-radius: 15px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: Avenir;
-        font-size: 16px;
-        color: #303e89;
+      .file-item-right {
+        .file-item-button {
+          width: 60px;
+          height: 40px;
+          background: #90909033;
+          border-radius: 15px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: Avenir;
+          font-size: 16px;
+          color: #ffffff;
+        }
       }
     }
   }
@@ -208,40 +279,51 @@ const handleSoundRecording = () => {
   align-items: center;
   justify-content: center;
   .more-button {
-    width: 80px;
+    width: 40px;
     height: 40px;
-    border-radius: 15px;
+    background: #90909033;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: Avenir;
-    font-size: 16px;
     margin-left: 10px;
-    &.more-button-1 {
-      background: #efefef;
-      color: #595959;
-    }
-    &.more-button-2 {
-      background: #a5e9ff;
-      color: #004685;
-    }
-    &.more-button-3 {
-      background: #ed9672;
-      color: #852204;
-    }
   }
 }
 
 .sound-recording-btn {
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
-  background: #303e89;
+  background: #90909033;
   position: fixed;
   bottom: 100px;
   right: 30px;
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.popup-bottom-box {
+  padding: 20px;
+  .title {
+    font-family: Avenir;
+    font-size: 18px;
+    color: #222222;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  .text-box {
+    background: #ececec;
+    border-radius: 20px;
+    .text {
+      padding: 5px 20px;
+      font-family: Avenir;
+      font-size: 14px;
+      color: #131313;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  }
 }
 </style>
