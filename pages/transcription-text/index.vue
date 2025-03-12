@@ -48,7 +48,6 @@ import OSS from 'ali-oss';
 const APPKEY = import.meta.env.VITE_APPKEY;
 const ACCESSKEYID = import.meta.env.VITE_ACCESSKEYID;
 const ACCESSKEYSECRET = import.meta.env.VITE_ACCESSKEYSECRET;
-const OSSBUCKETURL = import.meta.env.VITE_OSSBUCKETURL;
 const TINGWU_APPKEY = import.meta.env.VITE_TINGWU_APPKEY;
 
 const accessTokenKey = 'aliyun_access_token';
@@ -79,6 +78,7 @@ onLoad(async (options) => {
   const recordList = uni.getStorageSync('jarvis-record') || [];
   if (recordList.length > 0) {
     recordInfo.value = recordList.find((item) => item.startTimestamp == options.id);
+    console.log('录音详情', recordInfo.value);
   }
 });
 
@@ -167,7 +167,7 @@ const uploadToOss = async (filePath) => {
     const policyObj = {
       expiration: expiration,
       conditions: [
-        ['content-length-range', 0, 10485760], // 限制文件大小在 10MB 以内
+        ['content-length-range', 0, 1048576000], // 限制文件大小在 1000MB 以内
         ['starts-with', '$key', ''] // 允许所有文件名
       ]
     };
@@ -175,11 +175,11 @@ const uploadToOss = async (filePath) => {
     const policy = btoa(JSON.stringify(policyObj));
     const signature = CryptoJS.HmacSHA1(policy, ACCESSKEYSECRET).toString(CryptoJS.enc.Base64);
 
-    const fileName = `${recordInfo.value.fileName}.mp3`;
+    const fileName = `${recordInfo.value.fileName}-${recordInfo.value.startTimestamp}.mp3`;
 
     return new Promise((resolve, reject) => {
       uni.uploadFile({
-        url: OSSBUCKETURL,
+        url: 'http://jarvis-uniapp.oss-cn-shanghai.aliyuncs.com',
         filePath: filePath,
         name: 'file',
         formData: {

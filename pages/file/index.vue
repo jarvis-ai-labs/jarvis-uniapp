@@ -286,7 +286,7 @@ const handleSoundRecording = () => {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-left: 10px;
+    margin-left: 20px;
   }
 }
 

@@ -66,8 +66,10 @@ onLoad((options) => {
   const recordList = uni.getStorageSync('jarvis-record') || [];
   if (recordList.length > 0) {
     recordInfo.value = recordList.find((item) => item.startTimestamp == options.id);
-    if (recordInfo.value) initAudioPlayer();
-    console.log('录音详情', recordInfo.value);
+    if (recordInfo.value) {
+      initAudioPlayer();
+      console.log('录音详情', recordInfo.value);
+    }
   }
 });
 
@@ -125,17 +127,13 @@ const initAudioEvents = () => {
     uni.showToast({ title: '播放失败: ' + res.errMsg, icon: 'none' });
   });
 
-  audioContext.value.onCanplay(() => {
-    console.log('音频可以播放');
-  });
+  audioContext.value.onCanplay(() => {});
 
   audioContext.value.onPlay(() => {
-    console.log('开始播放');
     isPlaying.value = true;
   });
 
   audioContext.value.onPause(() => {
-    console.log('暂停播放');
     isPlaying.value = false;
   });
 

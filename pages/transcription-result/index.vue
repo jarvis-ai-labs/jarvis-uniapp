@@ -114,11 +114,10 @@ onLoad((options) => {
   const recordList = uni.getStorageSync('jarvis-record') || [];
   if (recordList.length > 0) {
     recordInfo.value = recordList.find((item) => item.startTimestamp == options.id);
-    console.log('当前录音', recordInfo.value);
     if (recordInfo.value) {
       getTaskList();
+      console.log('录音详情', recordInfo.value);
       paragraphs.value = recordInfo.value.transcriptionResult.Transcription.Paragraphs;
-      console.log('录音段落', paragraphs.value);
     }
   }
 });
