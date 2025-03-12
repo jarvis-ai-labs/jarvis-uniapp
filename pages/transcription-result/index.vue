@@ -32,7 +32,7 @@
 
           <view class="transcription-box">
             <view v-for="item in paragraphs" :key="item.ParagraphId">
-              <view class="speaker">说话人{{ item.SpeakerId }}：</view>
+              <view class="speaker">讲话人{{ item.SpeakerId }}：</view>
               <view class="text">
                 <text v-for="word in item.Words" :key="word.Id">{{ word.Text }}</text>
               </view>
@@ -145,7 +145,7 @@ const processTask = async (item, isRegenerate = false) => {
 
   let text = '';
   // paragraphs.value.forEach((item) => {
-  //   text += `说话人${item.SpeakerId}：`;
+  //   text += `讲话人${item.SpeakerId}：`;
   //   item.Words.forEach((word) => {
   //     text += word.Text;
   //   });
@@ -330,6 +330,18 @@ const handleCopyText = () => {
   font-weight: 300;
   font-size: 14px;
   color: #f0f0f0;
+  > view {
+    margin-bottom: 10px;
+    .speaker {
+      font-family: Avenir;
+      font-size: 14px;
+      color: #949494;
+    }
+    .text {
+      font-family: Avenir;
+      font-size: 14px;
+    }
+  }
 }
 
 .btn-list {

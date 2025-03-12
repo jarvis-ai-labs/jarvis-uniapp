@@ -466,7 +466,7 @@ const checkResult = async (taskId) => {
       } else {
         // 任务仍在进行中，等待后再次查询
         logTextList.value.push(`再次查询转录状态...`);
-        await new Promise((resolve) => setTimeout(resolve, 3000)); // 等待3秒
+        await new Promise((resolve) => setTimeout(resolve, 5000)); // 等待3秒
         retryCount++;
       }
     }

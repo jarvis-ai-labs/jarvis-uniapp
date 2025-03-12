@@ -188,6 +188,12 @@ const recStart = () => {
       type: 'mp3',
       sampleRate: 16000,
       bitRate: 16,
+      audioTrackSet: {
+        //配置回声消除，H5、App、小程序均可用，但并不一定会生效；注意：H5、App+renderjs中需要在请求录音权限前进行相同配置RecordApp.RequestPermission_H5OpenSet后此配置才会生效
+        noiseSuppression: true,
+        echoCancellation: true,
+        autoGainControl: true
+      },
 
       onProcess: (buffers, powerLevel, duration, sampleRate, newBufferIdx, asyncEnd) => {
         recpowertTime.value = formatDuration(duration);
