@@ -144,16 +144,16 @@ const processTask = async (item, isRegenerate = false) => {
   }
 
   let text = '';
-  // paragraphs.value.forEach((item) => {
-  //   text += `讲话人${item.SpeakerId}：`;
-  //   item.Words.forEach((word) => {
-  //     text += word.Text;
-  //   });
-  //   text += '\n';
-  // });
-  // console.log('ProcessTextTask', item.name, text);
+  paragraphs.value.forEach((item) => {
+    text += `讲话人${item.SpeakerId}：`;
+    item.Words.forEach((word) => {
+      text += word.Text;
+    });
+    text += '\n';
+  });
+  console.log('ProcessTextTask', item.name, text);
 
-  text = getAudioToTextExample();
+  // text = getAudioToTextExample();
 
   try {
     const res = await ProcessTextTask(item.name, text);

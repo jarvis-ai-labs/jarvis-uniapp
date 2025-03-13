@@ -291,8 +291,8 @@ const handleSoundRecording = () => {
 }
 
 .sound-recording-btn {
-  width: 50px;
-  height: 50px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   background: #90909033;
   position: fixed;
