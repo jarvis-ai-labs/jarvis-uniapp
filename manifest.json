@@ -8,6 +8,14 @@
     /* 5+App特有相关 */
     "app-plus" : {
         "darkmode" : true,
+        "themeLocation" : "theme.json",
+        "safearea" : {
+            "background" : "#ffffff",
+            "backgroundDark" : "#1F1F1F",
+            "bottom" : {
+                "offset" : "auto"
+            }
+        },
         "usingComponents" : true,
         "nvueStyleCompiler" : "uni-app",
         "compilerVersion" : 3,

@@ -21,8 +21,8 @@
           <button @click="switchTab('ai-assistant')" :class="{ active: currentTab === 'ai-assistant' }">AI助手</button>
         </view>
 
-        <template v-if="currentTab === 'transcription-results'">
-          <view class="record-info">
+        <template v-if="currentTab === 1">
+          <view class="record-info" v-if="recordInfo">
             <view class="file-name">{{ recordInfo.fileName }}</view>
             <view class="record-time">
               <view class="time">{{ recordInfo.durationText }}</view>
@@ -40,23 +40,29 @@
           </view>
         </template>
 
-        <template v-if="currentTab === 'ai-assistant'">
-          <view class="features" v-for="result in taskResult" :key="result.id">
-            <view class="topbox">
-              <view class="title">{{ result.name }}: </view>
-              <ua-markdown :source="result.result || ''" />
-            </view>
-            <view class="bottombox">
-              <uni-icons type="redo" size="20" color="#fff" @click="handleOpenShare(result)"></uni-icons>
-              <text @click="handleRegenerate(result)">重新生成</text>
-            </view>
-          </view>
+        <template v-if="currentTab === 2">
+          <uni-collapse accordion>
+            <uni-collapse-item
+              v-for="result in taskResult"
+              :key="result.id"
+              :title="result.name"
+              :open="result.id == openTaskId">
+              <view class="task-result-content">
+                <view class="loading-box" v-if="result.loading">
+                  <i class="uni-toast__icon uni-loading"></i>
+                </view>
+                <template v-if="result.result">
+                  <ua-markdown :source="result.result" />
+                  <view class="bottombox">
+                    <uni-icons type="redo" size="20" color="#fff" @click="handleOpenShare(result)"></uni-icons>
+                    <text @click="handleRegenerate(result)">重新生成</text>
+                  </view>
+                </template>
+              </view>
+            </uni-collapse-item>
+          </uni-collapse>
 
-          <button v-if="taskResult.length > 0 && !showRemainingTask" class="btn-generate" @click="handleGenerateMore">
-            继续生成
-          </button>
-
-          <view class="btn-list" v-if="showRemainingTask">
+          <view class="btn-list">
             <view class="btn-item" v-for="item in newTaskList" :key="item.id" @click="handleClickTask(item)">
               <text>{{ item.name }}</text>
               <uni-icons type="right" size="16" color="#A9A9A9"></uni-icons>
@@ -67,7 +73,7 @@
     </view>
     <uni-popup ref="shareDom" background-color="#EBEBEB" borderRadius="20px 20px 0 0">
       <view class="popup-bottom-box">
-        <view class="title">分享</view>
+        <view class="title">分享 《{{ currentShareContent.name }}》</view>
         <view class="share-list">
           <view class="share-item" @click="handleExportWord()">
             <image mode="heightFix" src="/static/images/icon-word.png" />
@@ -93,17 +99,17 @@ import { onLoad } from '@dcloudio/uni-app';
 import { GetSupportedTasks, ProcessTextTask } from '@/api/api';
 import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
-import { getAudioToTextExample } from '@/utils';
 
 const shareDom = ref(null);
-const currentTab = ref('transcription-results');
+const currentTab = ref(1);
 const recordInfo = ref(null);
 const paragraphs = ref([]);
-const showRemainingTask = ref(true);
 const taskList = ref([]);
 const newTaskList = ref([]);
 const taskResult = ref([]);
-const currentShareContent = ref('');
+const currentShareContent = ref(null);
+const openTaskId = ref(0);
+const isLoading = ref(false);
 
 onLoad((options) => {
   if (!options?.id) {
@@ -118,6 +124,7 @@ onLoad((options) => {
       getTaskList();
       console.log('录音详情', recordInfo.value);
       paragraphs.value = recordInfo.value.transcriptionResult.Transcription.Paragraphs;
+      taskResult.value = recordInfo.value.taskResult;
     }
   }
 });
@@ -125,7 +132,15 @@ onLoad((options) => {
 const getTaskList = async () => {
   try {
     const res = await GetSupportedTasks();
-    newTaskList.value = taskList.value = res.data || [];
+
+    // 获取已完成任务的id列表
+    const completedTaskIds = taskResult.value.map((task) => task.id);
+
+    // 过滤掉已完成的任务
+    const availableTasks = res.data.filter((task) => !completedTaskIds.includes(task.id));
+
+    // 更新任务列表
+    newTaskList.value = taskList.value = availableTasks || [];
   } catch (error) {
     newTaskList.value = taskList.value = [];
     console.error('获取任务失败', error);
@@ -134,13 +149,20 @@ const getTaskList = async () => {
 };
 
 const processTask = async (item, isRegenerate = false) => {
-  uni.showLoading({ title: '请稍后...', mask: true });
-  showRemainingTask.value = false;
+  if (isLoading.value) return;
+  isLoading.value = true;
+
+  openTaskId.value = item.id;
 
   if (!isRegenerate) {
-    taskResult.value.push({ id: item.id, name: item.name, result: '' });
+    // 添加新任务，并初始化 loading 状态
+    taskResult.value.push({ id: item.id, name: item.name, result: '', loading: true });
+    newTaskList.value = taskList.value.filter((item) => !taskResult.value.some((result) => result.id === item.id));
   } else {
-    taskResult.value = taskResult.value.map((result) => (result.id === item.id ? { ...result, result: '' } : result));
+    // 重新生成任务，并设置 loading 状态
+    taskResult.value = taskResult.value.map((result) =>
+      result.id === item.id ? { ...result, result: '', loading: true } : result
+    );
   }
 
   let text = '';
@@ -151,26 +173,26 @@ const processTask = async (item, isRegenerate = false) => {
     });
     text += '\n';
   });
-  console.log('ProcessTextTask', item.name, text);
-
-  // text = getAudioToTextExample();
 
   try {
     const res = await ProcessTextTask(item.name, text);
-
-    const target = taskResult.value.find((result) => result.id === item.id);
-    if (target) {
-      target.result = res.data;
-    }
-    showRemainingTask.value = false;
+    taskResult.value = taskResult.value.map((result) =>
+      result.id === item.id ? { ...result, result: res.data, loading: false } : result
+    );
   } catch (error) {
-    const target = taskResult.value.find((result) => result.id === item.id);
-    if (target) {
-      target.result = isRegenerate ? '重新生成失败，请重试' : '生成失败，请重试';
-    }
-    showRemainingTask.value = true;
+    taskResult.value = taskResult.value.map((result) =>
+      result.id === item.id ? { ...result, result: '生成失败，请重试', loading: false } : result
+    );
   } finally {
-    uni.hideLoading();
+    isLoading.value = false;
+    const recordList = uni.getStorageSync('jarvis-record') || [];
+    const newRecordList = recordList.map((record) => {
+      if (record.startTimestamp === recordInfo.value.startTimestamp) {
+        record.taskResult = taskResult.value;
+      }
+      return record;
+    });
+    uni.setStorageSync('jarvis-record', newRecordList);
   }
 };
 
@@ -183,17 +205,8 @@ const handleRegenerate = async (item) => {
 };
 
 const handleOpenShare = (item) => {
-  currentShareContent.value = item.result;
+  currentShareContent.value = item;
   shareDom.value.open('bottom');
-};
-
-const handleGenerateMore = () => {
-  if (taskResult.value.length === 0) {
-    newTaskList.value = taskList.value;
-  } else {
-    newTaskList.value = taskList.value.filter((item) => !taskResult.value.some((result) => result.id === item.id));
-  }
-  showRemainingTask.value = true;
 };
 
 const switchTab = (tab) => {
@@ -356,6 +369,22 @@ const handleCopyText = () => {
   }
 }
 
+.task-result-content {
+  .bottombox {
+    height: 50px;
+    line-height: 50px;
+    border-top: 1px solid #343434;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: Avenir;
+    font-size: 16px;
+    font-weight: 300;
+    color: #007aff;
+    padding: 0 20px;
+  }
+}
+
 .features {
   background: #70707033;
   border-radius: 18px;
@@ -376,16 +405,6 @@ const handleCopyText = () => {
       color: #acacac;
     }
   }
-  .bottombox {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-family: Avenir;
-    font-size: 14px;
-    font-weight: 300;
-    color: #007aff;
-    padding: 10px;
-  }
 }
 
 .btn-generate {
@@ -397,5 +416,16 @@ const handleCopyText = () => {
   font-weight: 300;
   font-size: 16px;
   color: #ffffff;
+}
+
+.loading-box {
+  width: 100%;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  .uni-toast__icon {
+    margin: 0;
+  }
 }
 </style>

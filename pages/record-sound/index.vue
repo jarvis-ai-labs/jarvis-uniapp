@@ -300,7 +300,7 @@ const recStop = () => {
         (savePath) => {
           console.log('保存录音成功:', savePath);
 
-          const audioBase64 = uni.arrayBufferToBase64(arrayBuffer);
+          // const audioBase64 = uni.arrayBufferToBase64(arrayBuffer);
 
           uni.saveFile({
             tempFilePath: savePath,
@@ -317,10 +317,9 @@ const recStop = () => {
                 startTimeText: formatDate(startTimestamp),
                 arrayBuffer,
                 size: arrayBuffer.byteLength,
-                audioBase64,
+                // audioBase64,
                 filePath: savedFilePath,
-                tempFilePath: savePath,
-                transcriptionResult: null
+                tempFilePath: savePath
               };
 
               let recordList = uni.getStorageSync('jarvis-record') || [];

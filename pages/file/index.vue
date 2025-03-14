@@ -129,6 +129,7 @@ const fileInfoDom = ref(null);
 const renameInput = ref('');
 
 onShow(() => {
+  // uni.removeStorageSync('jarvis-record');
   recordList.value = uni.getStorageSync('jarvis-record') || [];
   console.log('APP本地录音列表', recordList.value);
 });
