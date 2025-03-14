@@ -120,7 +120,7 @@ onLoad((options) => {
       getTaskList();
       console.log('录音详情', recordInfo.value);
       paragraphs.value = recordInfo.value.transcriptionResult.Transcription.Paragraphs;
-      taskResult.value = recordInfo.value.taskResult;
+      taskResult.value = recordInfo.value.taskResult || [];
     }
   }
 });
@@ -128,18 +128,22 @@ onLoad((options) => {
 const getTaskList = async () => {
   try {
     const res = await GetSupportedTasks();
+    console.log('获取任务列表', res.data);
 
-    // 获取已完成任务的id列表
-    const completedTaskIds = taskResult.value.map((task) => task.id);
+    if (res.status !== 'ok') {
+      throw new Error('获取任务列表失败');
+    }
 
-    // 过滤掉已完成的任务
-    const availableTasks = res.data.filter((task) => !completedTaskIds.includes(task.id));
-
-    // 更新任务列表
-    newTaskList.value = taskList.value = availableTasks || [];
+    if (taskResult.value.length > 0) {
+      const completedTaskIds = taskResult.value.map((task) => task.id);
+      const availableTasks = res.data.filter((task) => !completedTaskIds.includes(task.id));
+      newTaskList.value = taskList.value = availableTasks;
+    } else {
+      newTaskList.value = taskList.value = res.data;
+    }
   } catch (error) {
     newTaskList.value = taskList.value = [];
-    console.error('获取任务失败', error);
+    console.error('获取任务列表失败', error);
     uni.showToast({ title: '获取任务失败', icon: 'error' });
   }
 };
@@ -366,10 +370,13 @@ const handleCopyText = () => {
 }
 
 .task-result-content {
+  .ua__markdown {
+    padding: 10px 10px 10px 30px;
+  }
   .bottombox {
     height: 50px;
     line-height: 50px;
-    border-top: 1px solid #343434;
+    // border-bottom: 1px solid #343434;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -378,28 +385,6 @@ const handleCopyText = () => {
     font-weight: 300;
     color: #007aff;
     padding: 0 20px;
-  }
-}
-
-.features {
-  background: #70707033;
-  border-radius: 18px;
-  margin-bottom: 20px;
-  .topbox {
-    padding: 10px;
-    border-bottom: 1px solid #343434;
-    .title {
-      font-family: Avenir;
-      font-weight: 300;
-      font-size: 16px;
-      margin-bottom: 10px;
-    }
-    .text {
-      font-family: Avenir;
-      font-weight: 300;
-      font-size: 12px;
-      color: #acacac;
-    }
   }
 }
 
@@ -416,12 +401,14 @@ const handleCopyText = () => {
 
 .loading-box {
   width: 100%;
-  height: 60px;
+  height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
   .uni-toast__icon {
     margin: 0;
+    width: 30px;
+    height: 30px;
   }
 }
 </style>
