@@ -463,9 +463,10 @@ const checkResult = async (taskId) => {
         }
       } else if (status === 'FAILED') {
         logTextList.value.push(`转录失败`);
+        return null; // 转录失败时直接返回 null
       } else {
         // 任务仍在进行中，等待后再次查询
-        logTextList.value.push(`再次查询转录状态...`);
+        logTextList.value.push(`第${retryCount + 1}次查询转录状态...`);
         await new Promise((resolve) => setTimeout(resolve, 5000)); // 等待3秒
         retryCount++;
       }
@@ -473,9 +474,11 @@ const checkResult = async (taskId) => {
 
     if (retryCount >= maxRetries) {
       logTextList.value.push('转录超时，请稍后再试');
+      return null; // 转录超时后直接返回 null
     }
   } catch (error) {
     logTextList.value.push(`转录失败`);
+    return null; // 发生错误时直接返回 null
   }
 };
 
@@ -536,6 +539,12 @@ const handleAudioToText = async () => {
     // 5. 轮询查询结果
     logTextList.value.push('查询转录状态...');
     const transcriptionUrl = await checkResult(taskId);
+
+    // 如果 transcriptionUrl 为 null，则不再继续执行
+    if (!transcriptionUrl) {
+      audioToTextLoading.value = false;
+      return;
+    }
 
     // 6. 查询转录结果
     logTextList.value.push('查询转录结果...');
