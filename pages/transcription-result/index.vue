@@ -13,12 +13,8 @@
     <view class="container-box">
       <view class="transcription-result-box">
         <view class="tabs">
-          <button
-            @click="switchTab('transcription-results')"
-            :class="{ active: currentTab === 'transcription-results' }">
-            转录结果
-          </button>
-          <button @click="switchTab('ai-assistant')" :class="{ active: currentTab === 'ai-assistant' }">AI助手</button>
+          <button @click="switchTab(1)" :class="{ active: currentTab === 1 }">转录结果</button>
+          <button @click="switchTab(2)" :class="{ active: currentTab === 2 }">AI助手</button>
         </view>
 
         <template v-if="currentTab === 1">
