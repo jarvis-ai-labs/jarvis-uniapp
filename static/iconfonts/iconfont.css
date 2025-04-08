@@ -1,6 +1,8 @@
 @font-face {
-  font-family: 'iconfont';
-  src: url('/static/iconfonts/iconfont.ttf') format('truetype');
+  font-family: "iconfont"; /* Project id 4844904 */
+  src: url('iconfont.woff2?t=1744103284450') format('woff2'),
+       url('iconfont.woff?t=1744103284450') format('woff'),
+       url('iconfont.ttf?t=1744103284450') format('truetype');
 }
 
 .iconfont {
@@ -9,6 +11,18 @@
   font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-jishishalou:before {
+  content: "\e61e";
+}
+
+.icon-file:before {
+  content: "\e613";
+}
+
+.icon-loading:before {
+  content: "\e617";
 }
 
 .icon-play:before {

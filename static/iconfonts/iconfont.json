@@ -6,6 +6,27 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "5985625",
+      "name": "计时沙漏",
+      "font_class": "jishishalou",
+      "unicode": "e61e",
+      "unicode_decimal": 58910
+    },
+    {
+      "icon_id": "6403474",
+      "name": "file",
+      "font_class": "file",
+      "unicode": "e613",
+      "unicode_decimal": 58899
+    },
+    {
+      "icon_id": "36737743",
+      "name": "loading",
+      "font_class": "loading",
+      "unicode": "e617",
+      "unicode_decimal": 58903
+    },
+    {
       "icon_id": "1216901",
       "name": "play",
       "font_class": "play",

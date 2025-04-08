@@ -2,28 +2,25 @@
 <template>
   <view class="custom-tabbar">
     <view class="custom-tabbar-item">
-      <image src="/static/images/tab-memory.png" mode="widthFix"></image>
+      <image src="/static/images/tab-memory.png" mode="widthFix" />
       <text>Memory</text>
     </view>
     <view class="record-btn">
-      <image src="/static/images/record-btn.png" mode="widthFix"></image>
+      <image src="/static/images/record-btn.png" mode="widthFix" />
     </view>
     <view class="custom-tabbar-item">
-      <image src="/static/images/tab-tasks.png" mode="widthFix"></image>
+      <image src="/static/images/tab-tasks.png" mode="widthFix" />
       <text>Tasks</text>
     </view>
   </view>
 </template>
 
-<script setup>
-import { ref } from 'vue';
-
-</script>
+<script setup></script>
 
 <style lang="scss" scoped>
 .custom-tabbar {
   width: 100%;
-  height: 100px;
+  height: 80px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -38,26 +35,27 @@ import { ref } from 'vue';
     align-items: center;
     justify-content: center;
     image {
-      width: 40px;
-      height: 40px;
+      width: 30px;
+      height: 30px;
     }
     text {
       font-family: Avenir;
       font-weight: 300;
       font-size: 12px;
       color: #ffffff;
+      margin-top: 5px;
     }
   }
 
   .record-btn {
-    width: 100px;
-    height: 100px;
+    width: 65px;
+    height: 65px;
     position: absolute;
     left: 0;
     right: 0;
     bottom: 50px;
     margin: auto;
-
+    border-radius: 50%;
     image {
       width: 100%;
       height: auto;
