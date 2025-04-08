@@ -70,11 +70,10 @@
         display: grid;
         grid-template-columns: 1fr;
         gap: 10px;
-
         .header-right-item-text {
           width: 100%;
-          height: 24px;
-          border-radius: 24px;
+          height: 30px;
+          border-radius: 30px;
           border: 1px solid #303e89;
           display: flex;
           align-items: center;
@@ -85,10 +84,10 @@
             margin-right: 5px;
           }
           .textbox {
-            width: 40px;
+            width: 45px;
             font-family: Poppins;
             font-weight: 400;
-            font-size: 10px;
+            font-size: 12px;
             text-transform: capitalize;
             color: #ffffff;
             text-align: center;

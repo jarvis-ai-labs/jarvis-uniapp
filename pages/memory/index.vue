@@ -3,37 +3,99 @@
 
   <scroll-view scroll-y="true" class="main">
     <view class="uni-margin-wrap">
-      <view class="event-box">
-        <z-swiper grabCursor effect="cards" :cardsEffect="{ rotate: false }" :modules="modules" class="event-swiper">
-          <z-swiper-item v-for="item in 5" :key="item">
-            <view
-              class="event-item"
-              style="background: url('/static/images/img1.png') no-repeat center center; background-size: 100% 100%">
+      <z-swiper grabCursor effect="cards" :cardsEffect="{ rotate: false }" :modules="modules" class="event-swiper">
+        <z-swiper-item>
+          <view
+            class="event-box"
+            style="
+              background: url('/static/images/bg-event-2.png') no-repeat center center;
+              background-size: 100% 100%;
+            ">
+            <view class="box-content active">
+              <uni-icons type="checkbox" size="24" color="#ffffff" />
+              <view class="text"><text>行程详情</text></view>
+              <view class="text"><text>出发时间</text> <text>17:20</text></view>
+              <view class="text"><text>路线</text> <text>驾车路线(预计20分钟，途径东三环)</text></view>
+              <view class="text"><text>提醒</text> <text>提前10分钟通知</text></view>
+              <button class="event-btn">晚餐|18:00|国贸大厦</button>
+            </view>
+          </view>
+        </z-swiper-item>
+        <z-swiper-item>
+          <view
+            class="event-box"
+            style="
+              background: url('/static/images/bg-event-1.png') no-repeat center center;
+              background-size: 100% 100%;
+            ">
+            <view class="box-content">
               <uni-icons type="checkbox" size="24" color="#ffffff" />
               <button class="event-btn">Event</button>
+            </view>
+          </view>
+        </z-swiper-item>
+      </z-swiper>
+
+      <view class="schedule-document">
+        <z-swiper grabCursor effect="cards" :cardsEffect="{ rotate: false }" :modules="modules" class="schedule-swiper">
+          <z-swiper-item>
+            <view
+              class="schedule-box"
+              style="
+                background: url('/static/images/bg-schedule-2.png') no-repeat center center;
+                background-size: 100% 100%;
+              ">
+              <view class="box-content active">
+                <text class="iconfont">&#xe61e;</text>
+                <view class="text"><text>与技术部门探讨app 接入硬件需求</text></view>
+                <view class="text text2"><text>提醒</text><text>提前5分钟通知</text></view>
+                <view class="text"><text>会议 | 15:00 | 上海</text></view>
+              </view>
+            </view>
+          </z-swiper-item>
+          <z-swiper-item>
+            <view
+              class="schedule-box"
+              style="
+                background: url('/static/images/bg-schedule-1.png') no-repeat center center;
+                background-size: 100% 100%;
+              ">
+              <view class="box-content">
+                <text class="iconfont">&#xe61e;</text>
+                <text class="box-title">Schedule</text>
+              </view>
             </view>
           </z-swiper-item>
         </z-swiper>
 
-        <view class="eventbox2">
-          <view
-            class="event-item2"
-            style="background: url('/static/images/img2.png') no-repeat center center; background-size: 100% 100%">
-            <text class="iconfont">&#xe61e;</text>
-            <text class="event-text">Schedule</text>
-          </view>
-
-          <z-swiper grabCursor effect="cards" :cardsEffect="{ rotate: false }" :modules="modules" class="event-swiper2">
-            <z-swiper-item v-for="item in 5" :key="item">
-              <view
-                class="event-item3"
-                style="background: url('/static/images/img3.png') no-repeat center center; background-size: 100% 100%">
+        <z-swiper grabCursor effect="cards" :cardsEffect="{ rotate: false }" :modules="modules" class="document-swiper">
+          <z-swiper-item>
+            <view
+              class="document-box"
+              style="
+                background: url('/static/images/bg-document-2.png') no-repeat center center;
+                background-size: 100% 100%;
+              ">
+              <view class="box-content active">
                 <text class="iconfont">&#xe613;</text>
-                <text class="event-text">News</text>
+                <view class="text"><text>JARVIS正在进行对市面智能穿戴分析， 生成了报告文档。</text></view>
               </view>
-            </z-swiper-item>
-          </z-swiper>
-        </view>
+            </view>
+          </z-swiper-item>
+          <z-swiper-item>
+            <view
+              class="document-box"
+              style="
+                background: url('/static/images/bg-document-1.png') no-repeat center center;
+                background-size: 100% 100%;
+              ">
+              <view class="box-content">
+                <text class="iconfont">&#xe613;</text>
+                <text class="box-title">News</text>
+              </view>
+            </view>
+          </z-swiper-item>
+        </z-swiper>
       </view>
     </view>
 
@@ -239,57 +301,100 @@ const modules = ref([EffectCards]);
 
 .uni-margin-wrap {
   width: 100%;
+  display: flex;
+  justify-content: space-between;
   padding: 0 20px;
   margin-bottom: 10px;
   .swiper {
     margin: 0;
   }
-  .event-box {
+  .box-content {
     width: 100%;
+    height: 100%;
+    border-radius: 18px;
+    padding: 10px;
     display: flex;
-    justify-content: space-between;
-    .event-swiper {
-      width: 195px;
-      height: 300px;
-      .event-item {
-        width: 95%;
-        height: 100%;
+    flex-direction: column;
+    justify-content: flex-end;
+    position: relative;
+    &.active {
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.204) 0%, rgba(0, 0, 0, 0.6) 100%);
+      backdrop-filter: blur(2px);
+    }
+  }
+  .event-swiper {
+    width: 195px;
+    height: 300px;
+    .event-box {
+      width: 95%;
+      height: 100%;
+      .event-btn {
+        width: 100%;
+        height: 60px;
+        line-height: 60px;
         border-radius: 18px;
-        padding: 10px;
+        font-family: Avenir;
+        font-weight: 900;
+        font-size: 14px;
+        color: #000000;
+        margin-top: 10px;
+      }
+      .uni-icons {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+      }
+      .text {
+        font-family: Avenir;
+        font-weight: 300;
+        font-size: 12px;
+        color: #ffffff;
         display: flex;
-        align-items: flex-end;
-        position: relative;
-        .event-btn {
-          width: 100%;
-          height: 60px;
-          line-height: 60px;
-          border-radius: 18px;
-          font-family: Avenir;
-          font-weight: 900;
-          font-size: 14px;
-          color: #000000;
-        }
-        .uni-icons {
-          position: absolute;
-          top: 10px;
-          right: 10px;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 10px;
+        text {
+          width: 40%;
+          &:nth-child(2) {
+            width: 60%;
+          }
         }
       }
     }
-    .eventbox2 {
-      width: 170px;
-      height: 300px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      .event-item2 {
+  }
+  .schedule-document {
+    width: 170px;
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    .schedule-swiper {
+      width: 100%;
+      height: 170px;
+      .schedule-box {
         width: 100%;
-        height: 170px;
-        border-radius: 18px;
-        padding: 10px;
-        display: flex;
-        align-items: flex-end;
-        position: relative;
+        height: 100%;
+        .text {
+          font-family: Avenir;
+          font-weight: 300;
+          font-size: 12px;
+          color: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-top: 10px;
+          text {
+            width: 80%;
+          }
+          &.text2 {
+            text {
+              width: 40%;
+              &:nth-child(2) {
+                width: 60%;
+              }
+            }
+          }
+        }
         .iconfont {
           font-size: 20px;
           color: #ffffff;
@@ -297,37 +402,45 @@ const modules = ref([EffectCards]);
           top: 10px;
           right: 10px;
         }
-        .event-text {
+        .box-title {
           font-family: Avenir;
           font-weight: 300;
           font-size: 12px;
           color: #ffffff;
         }
       }
+    }
 
-      .event-swiper2 {
+    .document-swiper {
+      width: 100%;
+      height: 120px;
+      .document-box {
         width: 100%;
-        height: 120px;
-        .event-item3 {
-          width: 100%;
-          height: 100%;
-          border-radius: 18px;
-          padding: 10px;
+        height: 100%;
+        .iconfont {
+          font-size: 20px;
+          color: #ffffff;
+          position: absolute;
+          top: 10px;
+          right: 10px;
+        }
+        .box-title {
+          font-family: Avenir;
+          font-weight: 300;
+          font-size: 12px;
+          color: #ffffff;
+        }
+        .text {
+          font-family: Avenir;
+          font-weight: 300;
+          font-size: 12px;
+          color: #ffffff;
           display: flex;
-          align-items: flex-end;
-          position: relative;
-          .event-text {
-            font-family: Avenir;
-            font-weight: 300;
-            font-size: 12px;
-            color: #ffffff;
-            position: absolute;
-            top: 10px;
-            left: 10px;
-          }
-          .iconfont {
-            font-size: 20px;
-            color: #ffffff;
+          align-items: center;
+          justify-content: space-between;
+          margin-top: 10px;
+          text {
+            width: 80%;
           }
         }
       }
