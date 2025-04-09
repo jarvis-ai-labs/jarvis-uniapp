@@ -5,7 +5,6 @@
       <image src="/static/images/tab-memory.png" mode="widthFix" />
       <text>Memory</text>
     </view>
-    <record-btn />
     <view class="custom-tabbar-item">
       <image src="/static/images/tab-tasks.png" mode="widthFix" />
       <text>Tasks</text>
@@ -13,9 +12,7 @@
   </view>
 </template>
 
-<script setup>
-import RecordBtn from './record-btn.vue';
-</script>
+<script setup></script>
 
 <style lang="scss" scoped>
 .custom-tabbar {
@@ -44,21 +41,6 @@ import RecordBtn from './record-btn.vue';
       font-size: 12px;
       color: #ffffff;
       margin-top: 5px;
-    }
-  }
-
-  .record-btn {
-    width: 65px;
-    height: 65px;
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 50px;
-    margin: auto;
-    border-radius: 50%;
-    image {
-      width: 100%;
-      height: auto;
     }
   }
 }

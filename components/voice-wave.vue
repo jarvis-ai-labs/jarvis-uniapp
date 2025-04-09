@@ -1,11 +1,11 @@
 <template>
-  <canvas ref="canvas" class="voice-wave" type="2d" canvas-id="voiceWave" />
+  <canvas class="voice-wave" canvas-id="voiceWave" />
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, getCurrentInstance } from 'vue';
 
-const canvas = ref(null);
+const instance = getCurrentInstance();
 const ctx = ref(null);
 const animationFrame = ref(null);
 const dpr = ref(1);
@@ -20,7 +20,9 @@ const config = {
   minDotsPerCircle: 20, // 最内圈点数
   maxDotsPerCircle: 120, // 最外圈点数
   maxDotSize: 1.5, // 最大点大小
-  minDotSize: 0.5 // 最小点大小
+  minDotSize: 0.5, // 最小点大小
+  baseColor: 'rgba(151, 151, 151, 0)', // 基础颜色（透明）
+  activeColor: 'rgba(151, 151, 151, 1)' // 激活颜色
 };
 
 // 生成静态点阵
@@ -44,12 +46,8 @@ const generateDots = () => {
         y: centerY + Math.sin(angle) * radius,
         radius: radius,
         size: dotSize,
-        baseAlpha: 0, // 静态时的透明度
-        currentAlpha: 0, // 当前透明度
-        targetAlpha: 1, // 目标透明度
-        baseColor: 'rgba(151, 151, 151, 1)', // 静态时的颜色
-        currentColor: 'rgba(151, 151, 151, 1)', // 当前颜色
-        targetColor: 'rgba(151, 151, 151, 1)' // 目标颜色
+        currentColor: config.baseColor, // 初始为透明
+        targetColor: config.baseColor // 初始为透明
       });
     }
   }
@@ -57,21 +55,6 @@ const generateDots = () => {
 };
 
 const dots = ref(generateDots());
-
-// 绘制单个菱形点
-const drawDiamond = (x, y, size, color) => {
-  if (!ctx.value) return;
-
-  ctx.value.beginPath();
-  ctx.value.moveTo(x, y - size);
-  ctx.value.lineTo(x + size, y);
-  ctx.value.lineTo(x, y + size);
-  ctx.value.lineTo(x - size, y);
-  ctx.value.closePath();
-
-  ctx.value.setFillStyle(color);
-  ctx.value.fill();
-};
 
 // 更新点的状态
 const updateDots = () => {
@@ -83,16 +66,31 @@ const updateDots = () => {
       const targetAlpha = parseFloat(targetMatch[0]);
       const currentAlpha = parseFloat(currentMatch[0]);
 
-      // 平滑过渡到目标颜色
+      // 加快过渡速度
       const alphaDiff = targetAlpha - currentAlpha;
-      const newAlpha = currentAlpha + alphaDiff * 0.1;
+      const newAlpha = currentAlpha + alphaDiff * 1; // 从0.1改为0.3，加快过渡
       dot.currentColor = `rgba(151, 151, 151, ${newAlpha})`;
 
-      // 逐渐回归到初始颜色
-      const newTargetAlpha = Math.max(0, targetAlpha - 0.02);
+      // 加快回归速度
+      const newTargetAlpha = Math.max(0, targetAlpha - 0.1); // 从0.02改为0.05，加快消失
       dot.targetColor = `rgba(151, 151, 151, ${newTargetAlpha})`;
     }
   });
+};
+
+// 绘制单个菱形点
+const drawDiamond = (x, y, size, color) => {
+  if (!ctx.value) return;
+
+  ctx.value.beginPath();
+  ctx.value.moveTo(x, y - size); // 上点
+  ctx.value.lineTo(x + size, y); // 右点
+  ctx.value.lineTo(x, y + size); // 下点
+  ctx.value.lineTo(x - size, y); // 左点
+  ctx.value.closePath();
+
+  ctx.value.setFillStyle(color);
+  ctx.value.fill();
 };
 
 // 绘制所有点
@@ -100,7 +98,7 @@ const drawDots = () => {
   if (!ctx.value) return;
 
   // 清除画布
-  ctx.value.clearRect(0, 0, 160 * dpr.value, 160 * dpr.value);
+  ctx.value.clearRect(0, 0, 160, 160);
 
   // 绘制所有点
   dots.value.forEach((dot) => {
@@ -120,40 +118,34 @@ const animate = () => {
 
 // 输入音频数据
 const input = (powerLevel) => {
-  if (!ctx.value) return;
-
   // 将powerLevel转换为0-1之间的值
   const normalizedPower = Math.min(1, Math.max(0, powerLevel / 100));
 
-  if (normalizedPower > 0.1) {
-    // 根据声音强度更新点的目标颜色
-    dots.value.forEach((dot) => {
-      // 计算点到中心的距离比例
-      const distanceRatio = (dot.radius - config.startRadius) / (config.endRadius - config.startRadius);
+  // 根据声音强度更新点的目标颜色
+  dots.value.forEach((dot) => {
+    // 计算点到中心的距离比例
+    const distanceRatio = (dot.radius - config.startRadius) / (config.endRadius - config.startRadius);
 
-      // 声音越大，影响范围越大
-      if (distanceRatio < normalizedPower) {
-        // 在影响范围内的点，设置较高的不透明度
-        const alpha = 0.8 * (1 - distanceRatio);
-        dot.targetColor = `rgba(151, 151, 151, ${alpha})`;
-      }
-    });
-  }
+    // 声音越大，影响范围越大
+    if (distanceRatio < normalizedPower) {
+      // 在影响范围内的点，设置较高的不透明度
+      const alpha = 1 * (1 - distanceRatio);
+      dot.targetColor = `rgba(151, 151, 151, ${alpha})`;
+    } else {
+      // 不在影响范围内的点，快速设置为透明
+      dot.targetColor = config.baseColor;
+    }
+  });
 };
 
 // 初始化
 onMounted(() => {
-  // 使用uni.createCanvasContext获取canvas上下文
-  const canvasContext = uni.createCanvasContext('voiceWave', this);
-
+  // 获取canvas上下文
+  ctx.value = uni.createCanvasContext('voiceWave', instance.ctx);
+  
   // 设置canvas尺寸
   dpr.value = uni.getSystemInfoSync().pixelRatio;
-  const width = 160 * dpr.value;
-  const height = 160 * dpr.value;
-
-  // 保存上下文
-  ctx.value = canvasContext;
-
+  
   // 开始动画
   animate();
 });
