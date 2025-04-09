@@ -165,8 +165,8 @@
 </template>
 
 <script setup>
-import customTabbar from '../../components/custom-tabbar.vue';
-import customHeader from '../../components/custom-header.vue';
+import CustomTabbar from '../../components/custom-tabbar.vue';
+import CustomHeader from '../../components/custom-header.vue';
 
 import { ref } from 'vue';
 import { EffectCards } from '@/uni_modules/zebra-swiper/modules';
