@@ -14,7 +14,7 @@
 </template>
 
 <script setup>
-import RecordBtn from './record-component/record-btn.vue';
+import RecordBtn from './record-btn.vue';
 </script>
 
 <style lang="scss" scoped>

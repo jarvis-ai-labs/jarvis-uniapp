@@ -1,8 +1,15 @@
 <template>
-  <slot></slot>
+  <view>
+    <view class="record-btn" @click="handleStartPause">
+      <image src="/static/images/record-btn.png" mode="widthFix" />
+      <voice-wave />
+    </view>
+  </view>
 </template>
 
+<!-- #ifdef VUE3 -->
 <script setup>
+import VoiceWave from './voice-wave.vue';
 /** 先引入Recorder （ 需先 npm install recorder-core ）**/
 import Recorder from 'recorder-core';
 
@@ -20,60 +27,62 @@ import 'recorder-core/src/extensions/waveview.js';
 /** 引入RecordApp **/
 import RecordApp from 'recorder-core/src/app-support/app.js';
 //【所有平台必须引入】uni-app支持文件
-import '../../uni_modules/Recorder-UniCore/app-uni-support.js';
+import '../uni_modules/Recorder-UniCore/app-uni-support.js';
 
 // #ifdef MP-WEIXIN
 //可选引入微信小程序支持文件
 import 'recorder-core/src/app-support/app-miniProgram-wx-support.js';
 // #endif
 
-import permision from '@/js_sdk/wa-permission/permission.js';
-
 import { ref, getCurrentInstance, onMounted, onUnmounted } from 'vue';
 import { formatDate, formatFileName, formatDuration } from '@/utils';
-
-const props = defineProps({
-  onProcess: Function
-});
-
-var vue3This = getCurrentInstance().proxy; //必须定义到最外面，getCurrentInstance得到的就是当前实例this
+import { onShow } from '@dcloudio/uni-app';
+import permision from '@/js_sdk/wa-permission/permission.js';
 
 const startTimestamp = Date.now();
 const fileName = formatFileName(startTimestamp);
-const recpowertTime = ref('');
-const isRecording = ref(false);
 
-const requestPermission = () => {
+const isRecording = ref(false);
+const recpowertTime = ref('');
+
+var vue3This = getCurrentInstance().proxy; //必须定义到最外面，getCurrentInstance得到的就是当前实例this
+
+onMounted(() => {
+  console.log('onMounted');
+  vue3This.isMounted = true;
+  RecordApp.UniPageOnShow(vue3This); //onShow可能比mounted先执行，页面准备好了时再执行一次
+});
+
+onUnmounted(() => {
+  RecordApp.Stop();
+});
+
+onShow(() => {
+  console.log('onShow');
+  if (vue3This.isMounted) RecordApp.UniPageOnShow(vue3This); //onShow可能比mounted先执行，页面可能还未准备好
+});
+
+const recReq = () => {
   RecordApp.UniNativeUtsPlugin = null;
 
-  /****【在App内使用app-uni-support.js的授权许可】编译到App平台时仅供测试用（App平台包括：Android App、iOS App），不可用于正式发布或商用，正式发布或商用需先联系作者获得授权许可（编译到其他平台时无此授权限制，比如：H5、小程序，均为免费授权）
-    获得授权许可后，请解开下面这行注释，并且将**部分改成你的uniapp项目的appid，即可解除所有限制；使用配套的原生录音插件或uts插件时可不进行此配置
-    ****/
-  //RecordApp.UniAppUseLicense='我已获得UniAppID=*****的商用授权';
+  if (RecordApp.UniIsApp()) {
+    RecordApp.UniWebViewVueCall(vue3This, 'this.testCall("这里测试一下直接调用renderjs中的方法")');
+  }
 
-  RecordApp.RequestPermission_H5OpenSet = {
-    audioTrackSet: { noiseSuppression: true, echoCancellation: true, autoGainControl: true }
-  }; //这个是Start中的audioTrackSet配置，在h5（H5、App+renderjs）中必须提前配置，因为h5中RequestPermission会直接打开录音
-
-  // if (RecordApp.UniIsApp()) {
-  //   RecordApp.UniWebViewVueCall(vue3This, 'this.testCall("这里测试一下直接调用renderjs中的方法")');
-  // }
-
-  console.log('请求录音权限...');
+  console.log('正在请求录音权限...');
 
   RecordApp.UniWebViewActivate(vue3This); //App环境下必须先切换成当前页面WebView
 
   RecordApp.RequestPermission(
     () => {
-      console.log('已获得录音权限，可以开始录音了');
-      startRecording();
+      console.log('已获得录音权限，可以开始录音了', 2);
+      recStart();
     },
     (msg, isUserNotAllow) => {
       if (isUserNotAllow) {
-        //这里你应当编写代码进行引导用户给录音权限，不同平台分别进行编写
         openPermissionSetting();
       }
-      console.log((isUserNotAllow ? 'isUserNotAllow,' : '') + '请求录音权限失败：' + msg);
+      console.log((isUserNotAllow ? 'isUserNotAllow,' : '') + '请求录音权限失败：' + msg, 1);
     }
   );
 };
@@ -89,8 +98,6 @@ const openPermissionSetting = () => {
         success: function (res) {
           if (res.confirm) {
             permision.gotoAppPermissionSetting();
-          } else if (res.cancel) {
-            uni.switchTab({ url: '/pages/file/index' });
           }
         }
       });
@@ -101,10 +108,9 @@ const openPermissionSetting = () => {
   }
 };
 
-const startRecording = () => {
-  console.log('开始录音...');
-  RecordApp.UniWebViewActivate(vue3This);
-  //   tryStart_androidNotifyService();
+const recStart = () => {
+  console.log('正在打开...');
+  RecordApp.UniWebViewActivate(vue3This); //App环境下必须先切换成当前页面WebView
 
   RecordApp.Start(
     {
@@ -118,24 +124,21 @@ const startRecording = () => {
         autoGainControl: true
       },
 
-      onProcess: (buffers, powerLevel, duration, sampleRate) => {
+      onProcess: (buffers, powerLevel, duration, sampleRate, newBufferIdx, asyncEnd) => {
         recpowertTime.value = formatDuration(duration);
-        console.log('录音功率：', powerLevel, formatDuration(duration));
-        props.onProcess(powerLevel);
       },
       onProcess_renderjs: `function(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd){
         //App中在这里修改buffers才会改变生成的音频文件
         //App中是在renderjs中进行的可视化图形绘制，因此需要写在这里，this是renderjs模块的this（也可以用This变量）；如果代码比较复杂，请直接在renderjs的methods里面放个方法xxxFunc，这里直接使用this.xxxFunc(args)进行调用
-        props.onProcess(powerLevel);
       }`,
 
-      takeoffEncodeChunk: !vue3This.takeoffEncodeChunkSet
+      takeoffEncodeChunk: !instance?.proxy?.takeoffEncodeChunkSet
         ? null
         : (chunkBytes) => {
             //全平台通用：实时接收到编码器编码出来的音频片段数据，chunkBytes是Uint8Array二进制数据，可以实时上传（发送）出去
             //App中如果未配置RecordApp.UniWithoutAppRenderjs时，建议提供此回调，因为录音结束后会将整个录音文件从renderjs传回逻辑层，由于uni-app的逻辑层和renderjs层数据交互性能实在太拉跨了，大点的文件传输会比较慢，提供此回调后可避免Stop时产生超大数据回传
           },
-      takeoffEncodeChunk_renderjs: !vue3This.takeoffEncodeChunkSet
+      takeoffEncodeChunk_renderjs: !instance?.proxy?.takeoffEncodeChunkSet
         ? null
         : `function(chunkBytes){
         //App中这里可以做一些仅在renderjs中才生效的事情，不提供也行，this是renderjs模块的this（也可以用This变量）
@@ -151,21 +154,28 @@ const startRecording = () => {
       }`
     },
     () => {
-      console.log('录制中...');
+      console.log('录制中 appUseH5Rec', 2);
       isRecording.value = true;
     },
     (msg) => {
-      console.log('开始录音失败：' + msg);
+      console.log('开始录音失败：' + msg, 1);
       isRecording.value = false;
     }
   );
 };
 
-const stopRecording = () => {
-  console.log('结束录音...');
+const handleStartPause = () => {
+  if (isRecording.value) {
+    recStop();
+  } else {
+    recReq();
+  }
+};
+
+const recStop = () => {
+  console.log('正在结束录音...');
 
   isRecording.value = false;
-  //   tryClose_androidNotifyService();
 
   RecordApp.Stop(
     (arrayBuffer, duration, mime) => {
@@ -184,113 +194,14 @@ const stopRecording = () => {
           'kbps',
         2
       );
-
-      // #ifdef APP
-      // RecordApp.UniSaveLocalFile(
-      //   fileName + '.mp3',
-      //   arrayBuffer,
-      //   (savePath) => {
-      //     console.log('保存录音成功:', savePath);
-      //     uni.saveFile({
-      //       tempFilePath: savePath,
-      //       success: (res) => {
-      //         const savedFilePath = res.savedFilePath;
-      //         console.log('保存录音成功:', savedFilePath);
-      //       },
-      //       fail: (err) => {
-      //         console.error('保存录音失败:', err);
-      //         uni.showToast({ title: '保存录音失败', icon: 'error' });
-      //       }
-      //     });
-      //   },
-      //   (errMsg) => {
-      //     console.error('保存录音失败:', errMsg);
-      //     uni.showToast({ title: '保存录音失败', icon: 'error' });
-      //   }
-      // );
-      // #endif
     },
     (msg) => {
-      console.log('结束录音失败：' + msg);
+      console.log('结束录音失败：' + msg, 1);
     }
   );
 };
-
-defineExpose({
-  requestPermission,
-  startRecording,
-  stopRecording,
-  isRecording
-});
-
-onMounted(() => {
-  console.log('录音组件 onMounted');
-  vue3This.isMounted = true;
-  RecordApp.UniPageOnShow(vue3This); //onShow可能比mounted先执行，页面准备好了时再执行一次
-});
-
-onUnmounted(() => {
-  RecordApp.Stop(); //清理资源，如果打开了录音没有关闭，这里将会进行关闭
-});
-
-// const handleStartPause = () => {
-//   if (RecordApp.GetCurrentRecOrNull()) {
-//     if (isRecording.value) {
-//       RecordApp.Pause();
-//       isRecording.value = false;
-//       console.log('已暂停');
-//     } else {
-//       RecordApp.Resume();
-//       isRecording.value = true;
-//       console.log('继续录音中...');
-//     }
-//   }
-// };
-
-// const tryStart_androidNotifyService = () => {
-//   if (RecordApp.UniIsApp()) {
-//     console.log(
-//       'App中提升后台录音的稳定性：需要启用后台录音保活服务（iOS不需要），Android 9开始，锁屏或进入后台一段时间后App可能会被禁止访问麦克风导致录音静音、无法录音（App中H5录音也受影响），需要原生层提供搭配常驻通知的Android后台录音保活服务（Foreground services）；可调用配套原生插件的androidNotifyService接口，或使用第三方保活插件',
-//       '#4face6'
-//     );
-//   }
-//   if (RecordApp.UniIsApp() != 1) return; //非Android App不处理
-
-//   RecordApp.UniNativeUtsPluginCallAsync('androidNotifyService', {
-//     title: '正在录音',
-//     content: '正在录音中，请勿关闭App运行'
-//   })
-//     .then((data) => {
-//       const nCode = data.notifyPermissionCode,
-//         nMsg = data.notifyPermissionMsg;
-//       console.log(
-//         '搭配常驻通知的Android后台录音保活服务已打开，ForegroundService已运行(通知可能不显示或会延迟显示，并不影响服务运行)，通知显示状态(1有通知权限 3可能无权限)code=' +
-//           nCode +
-//           ' msg=' +
-//           nMsg,
-//         2
-//       );
-//     })
-//     .catch((e) => {
-//       console.log('原生插件的androidNotifyService接口调用出错：' + e.message);
-//       console.log(
-//         '如果你已集成了配套的原生录音插件，并且是打包自定义基座运行，请检查本项目根目录的AndroidManifest.xml里面是否已经解开了注释，否则被注释掉的service不会包含在App中'
-//       );
-//     });
-// };
-
-// const tryClose_androidNotifyService = () => {
-//   RecordApp.UniNativeUtsPluginCallAsync('androidNotifyService', {
-//     close: true
-//   })
-//     .then(() => {
-//       console.log('已关闭搭配常驻通知的Android后台录音保活服务');
-//     })
-//     .catch((e) => {
-//       console.log('原生插件的androidNotifyService接口调用出错：' + e.message);
-//     });
-// };
 </script>
+<!-- #endif -->
 
 <!-- #ifdef APP -->
 <script module="testMainVue" lang="renderjs">
@@ -310,12 +221,14 @@ onUnmounted(() => {
  /** 引入RecordApp **/
  import RecordApp from 'recorder-core/src/app-support/app.js'
  //【必须引入】uni-app支持文件
- import '../../uni_modules/Recorder-UniCore/app-uni-support.js'
+ import '../uni_modules/Recorder-UniCore/app-uni-support.js'
 
  export default {
    mounted(){
      //App的renderjs必须调用的函数，传入当前模块this
-     RecordApp.UniRenderjsRegister(this);
+    RecordApp.UniRenderjsRegister(this);
+		//测试用
+		rjsThis=this;
    },
    methods: {
      //这里定义的方法，在逻辑层中可通过 RecordApp.UniWebViewVueCall(this,'this.xxxFunc()') 直接调用
@@ -327,3 +240,19 @@ onUnmounted(() => {
   }
 </script>
 <!-- #endif -->
+
+<style lang="scss" scoped>
+.record-btn {
+  width: 60px;
+  height: 60px;
+  position: fixed;
+  bottom: 50px;
+  left: 0;
+  right: 0;
+  margin: auto;
+  image {
+    width: 100%;
+    height: 100%;
+  }
+}
+</style>

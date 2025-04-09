@@ -46,7 +46,10 @@ const generateDots = () => {
         size: dotSize,
         baseAlpha: 0, // 静态时的透明度
         currentAlpha: 0, // 当前透明度
-        targetAlpha: 1 // 目标透明度
+        targetAlpha: 1, // 目标透明度
+        baseColor: 'rgba(151, 151, 151, 1)', // 静态时的颜色
+        currentColor: 'rgba(151, 151, 151, 1)', // 当前颜色
+        targetColor: 'rgba(151, 151, 151, 1)' // 目标颜色
       });
     }
   }
@@ -56,29 +59,39 @@ const generateDots = () => {
 const dots = ref(generateDots());
 
 // 绘制单个菱形点
-const drawDiamond = (x, y, size, alpha) => {
+const drawDiamond = (x, y, size, color) => {
   if (!ctx.value) return;
 
   ctx.value.beginPath();
-  ctx.value.moveTo(x, y - size); // 上点
-  ctx.value.lineTo(x + size, y); // 右点
-  ctx.value.lineTo(x, y + size); // 下点
-  ctx.value.lineTo(x - size, y); // 左点
+  ctx.value.moveTo(x, y - size);
+  ctx.value.lineTo(x + size, y);
+  ctx.value.lineTo(x, y + size);
+  ctx.value.lineTo(x - size, y);
   ctx.value.closePath();
 
-  ctx.value.fillStyle = `rgba(151, 151, 151, ${alpha})`;
+  ctx.value.setFillStyle(color);
   ctx.value.fill();
 };
 
 // 更新点的状态
 const updateDots = () => {
   dots.value.forEach((dot) => {
-    // 平滑过渡到目标透明度
-    const alphaDiff = dot.targetAlpha - dot.currentAlpha;
-    dot.currentAlpha += alphaDiff * 0.1;
+    // 从目标颜色中提取alpha值
+    const targetMatch = dot.targetColor.match(/[\d.]+\)$/);
+    const currentMatch = dot.currentColor.match(/[\d.]+\)$/);
+    if (targetMatch && currentMatch) {
+      const targetAlpha = parseFloat(targetMatch[0]);
+      const currentAlpha = parseFloat(currentMatch[0]);
 
-    // 逐渐回归到基础透明度
-    dot.targetAlpha = Math.max(dot.baseAlpha, dot.targetAlpha - 0.02);
+      // 平滑过渡到目标颜色
+      const alphaDiff = targetAlpha - currentAlpha;
+      const newAlpha = currentAlpha + alphaDiff * 0.1;
+      dot.currentColor = `rgba(151, 151, 151, ${newAlpha})`;
+
+      // 逐渐回归到初始颜色
+      const newTargetAlpha = Math.max(0, targetAlpha - 0.02);
+      dot.targetColor = `rgba(151, 151, 151, ${newTargetAlpha})`;
+    }
   });
 };
 
@@ -91,34 +104,38 @@ const drawDots = () => {
 
   // 绘制所有点
   dots.value.forEach((dot) => {
-    drawDiamond(dot.x, dot.y, dot.size, dot.currentAlpha);
+    drawDiamond(dot.x, dot.y, dot.size, dot.currentColor);
   });
+
+  // 绘制到画布
+  ctx.value.draw();
 };
 
 // 动画循环
 const animate = () => {
   updateDots();
   drawDots();
-  animationFrame.value = requestAnimationFrame(animate);
+  animationFrame.value = setTimeout(animate, 16); // 约60fps
 };
 
 // 输入音频数据
 const input = (powerLevel) => {
+  if (!ctx.value) return;
+
   // 将powerLevel转换为0-1之间的值
   const normalizedPower = Math.min(1, Math.max(0, powerLevel / 100));
 
   if (normalizedPower > 0.1) {
-    // 根据声音强度更新点的目标透明度
+    // 根据声音强度更新点的目标颜色
     dots.value.forEach((dot) => {
       // 计算点到中心的距离比例
       const distanceRatio = (dot.radius - config.startRadius) / (config.endRadius - config.startRadius);
 
       // 声音越大，影响范围越大
-      const powerThreshold = 1 - normalizedPower;
-
       if (distanceRatio < normalizedPower) {
-        // 在影响范围内的点，设置较高的透明度
-        dot.targetAlpha = 0.8 * (1 - distanceRatio);
+        // 在影响范围内的点，设置较高的不透明度
+        const alpha = 0.8 * (1 - distanceRatio);
+        dot.targetColor = `rgba(151, 151, 151, ${alpha})`;
       }
     });
   }
@@ -126,32 +143,25 @@ const input = (powerLevel) => {
 
 // 初始化
 onMounted(() => {
-  const query = uni.createSelectorQuery().in(this);
-  query
-    .select('.voice-wave')
-    .fields({ node: true, size: true })
-    .exec((res) => {
-      if (res[0] && res[0].node) {
-        canvas.value = res[0].node;
-        ctx.value = canvas.value.getContext('2d');
+  // 使用uni.createCanvasContext获取canvas上下文
+  const canvasContext = uni.createCanvasContext('voiceWave', this);
 
-        // 设置canvas尺寸
-        dpr.value = uni.getSystemInfoSync().pixelRatio;
-        canvas.value.width = 160 * dpr.value;
-        canvas.value.height = 160 * dpr.value;
+  // 设置canvas尺寸
+  dpr.value = uni.getSystemInfoSync().pixelRatio;
+  const width = 160 * dpr.value;
+  const height = 160 * dpr.value;
 
-        // 开始动画
-        animate();
-      } else {
-        console.error('Canvas initialization failed:', res);
-      }
-    });
+  // 保存上下文
+  ctx.value = canvasContext;
+
+  // 开始动画
+  animate();
 });
 
 // 清理
 onUnmounted(() => {
   if (animationFrame.value) {
-    cancelAnimationFrame(animationFrame.value);
+    clearTimeout(animationFrame.value);
   }
 });
 
