@@ -53,7 +53,7 @@
     .header-title {
       font-family: Poppins;
       font-weight: 400;
-      font-size: 36px;
+      font-size: 30px;
       text-transform: capitalize;
       color: #ffffff;
     }

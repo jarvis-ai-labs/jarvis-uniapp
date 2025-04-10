@@ -5,6 +5,9 @@
       <image src="/static/images/tab-memory.png" mode="widthFix" />
       <text>Memory</text>
     </view>
+    <!-- <view class="record-btn" @click="toRecord">
+      <image src="/static/images/record-btn.png" mode="widthFix" />
+    </view> -->
     <view class="custom-tabbar-item">
       <image src="/static/images/tab-tasks.png" mode="widthFix" />
       <text>Tasks</text>
@@ -12,7 +15,13 @@
   </view>
 </template>
 
-<script setup></script>
+<script setup>
+// const toRecord = () => {
+//   uni.navigateTo({
+//     url: '/pages/record/index'
+//   });
+// };
+</script>
 
 <style lang="scss" scoped>
 .custom-tabbar {

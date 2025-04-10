@@ -16,11 +16,11 @@ const centerY = 80;
 const config = {
   startRadius: 30, // 开始半径（按钮边缘）
   endRadius: 80, // 结束半径
-  circleCount: 15, // 圆圈数量
-  minDotsPerCircle: 20, // 最内圈点数
-  maxDotsPerCircle: 120, // 最外圈点数
-  maxDotSize: 1.5, // 最大点大小
-  minDotSize: 0.5, // 最小点大小
+  circleCount: 12, // 减少圆圈数量，使变化更明显
+  minDotsPerCircle: 15, // 减少最内圈点数
+  maxDotsPerCircle: 80, // 减少最外圈点数
+  maxDotSize: 2, // 增大最大点大小
+  minDotSize: 0.8, // 增大最小点大小
   baseColor: 'rgba(151, 151, 151, 0)', // 基础颜色（透明）
   activeColor: 'rgba(151, 151, 151, 1)' // 激活颜色
 };
@@ -59,7 +59,6 @@ const dots = ref(generateDots());
 // 更新点的状态
 const updateDots = () => {
   dots.value.forEach((dot) => {
-    // 从目标颜色中提取alpha值
     const targetMatch = dot.targetColor.match(/[\d.]+\)$/);
     const currentMatch = dot.currentColor.match(/[\d.]+\)$/);
     if (targetMatch && currentMatch) {
@@ -68,11 +67,11 @@ const updateDots = () => {
 
       // 加快过渡速度
       const alphaDiff = targetAlpha - currentAlpha;
-      const newAlpha = currentAlpha + alphaDiff * 1; // 从0.1改为0.3，加快过渡
+      const newAlpha = currentAlpha + alphaDiff * 0.5; // 降低过渡速度，使动画更平滑
       dot.currentColor = `rgba(151, 151, 151, ${newAlpha})`;
 
-      // 加快回归速度
-      const newTargetAlpha = Math.max(0, targetAlpha - 0.1); // 从0.02改为0.05，加快消失
+      // 减慢回归速度
+      const newTargetAlpha = Math.max(0, targetAlpha - 0.02); // 减慢消失速度
       dot.targetColor = `rgba(151, 151, 151, ${newTargetAlpha})`;
     }
   });
@@ -118,18 +117,17 @@ const animate = () => {
 
 // 输入音频数据
 const input = (powerLevel) => {
-  // 将powerLevel转换为0-1之间的值
-  const normalizedPower = Math.min(1, Math.max(0, powerLevel / 100));
+  // 将powerLevel转换为0-1之间的值，并增加灵敏度
+  const normalizedPower = Math.min(1, Math.max(0, powerLevel / 50)); // 降低分母，提高灵敏度
 
   // 根据声音强度更新点的目标颜色
   dots.value.forEach((dot) => {
-    // 计算点到中心的距离比例
     const distanceRatio = (dot.radius - config.startRadius) / (config.endRadius - config.startRadius);
 
     // 声音越大，影响范围越大
     if (distanceRatio < normalizedPower) {
-      // 在影响范围内的点，设置较高的不透明度
-      const alpha = 1 * (1 - distanceRatio);
+      // 在影响范围内的点，设置较高的不透明度，并增加对比度
+      const alpha = 1.2 * (1 - distanceRatio); // 增加对比度
       dot.targetColor = `rgba(151, 151, 151, ${alpha})`;
     } else {
       // 不在影响范围内的点，快速设置为透明
@@ -138,14 +136,24 @@ const input = (powerLevel) => {
   });
 };
 
+// 清除声纹效果
+const clear = () => {
+  if (ctx.value) {
+    ctx.value.clearRect(0, 0, 160, 160);
+  }
+  if (animationFrame.value) {
+    clearTimeout(animationFrame.value);
+  }
+};
+
 // 初始化
 onMounted(() => {
   // 获取canvas上下文
   ctx.value = uni.createCanvasContext('voiceWave', instance.ctx);
-  
+
   // 设置canvas尺寸
   dpr.value = uni.getSystemInfoSync().pixelRatio;
-  
+
   // 开始动画
   animate();
 });
@@ -158,7 +166,8 @@ onUnmounted(() => {
 });
 
 defineExpose({
-  input
+  input,
+  clear
 });
 </script>
 

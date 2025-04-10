@@ -4,6 +4,17 @@
   box-sizing: border-box;
 }
 
+@import './static/iconfonts/iconfont.css';
+
+@font-face {
+  font-family: Avenir;
+  src: url('./static/fonts/Avenir.ttc');
+}
+@font-face {
+  font-family: Poppins;
+  src: url('./static/fonts/Poppins.otf');
+}
+
 html,
 body {
   width: 100%;
@@ -45,31 +56,4 @@ uni-slider .uni-slider-handle-wrapper {
   height: 0 !important;
   background: transparent !important;
   border: none !important;
-}
-
-.record-btn {
-  width: 60px;
-  height: 60px;
-  position: fixed;
-  bottom: 50px;
-  left: 0;
-  right: 0;
-  margin: auto;
-  z-index: 999;
-  image {
-    width: 100%;
-    height: 100%;
-    z-index: 2;
-  }
-
-  .voice-wave {
-    width: 160px;
-    height: 160px;
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    background: transparent;
-    z-index: 1;
-  }
 }
