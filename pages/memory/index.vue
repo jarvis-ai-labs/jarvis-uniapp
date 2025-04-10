@@ -205,12 +205,29 @@ import 'recorder-core/src/app-support/app-miniProgram-wx-support.js';
 
 import permision from '@/js_sdk/wa-permission/permission.js';
 
+import { SpeechTranscription } from 'alibabacloud-nls';
+import fs from 'fs';
+
+import {
+  getAccessToken,
+  uploadToOss,
+  generateSignatureUrl,
+  createTaskSummary,
+  getTaskInfo,
+  getTaskStatus,
+  getTaskResult
+} from '@/api/api';
+
 const vue3This = getCurrentInstance().proxy;
 const isRecording = ref(false);
 const voiceWaveRef = ref(null);
-const recPowerTime = ref('');
+const recordDuration = ref('');
 const startTimestamp = Date.now();
 const fileName = formatFileName(startTimestamp);
+const isSummaryLoading = ref(false);
+const speechTranscription = ref(null);
+const sampleData = ref(null);
+const recognitionResult = ref('');
 
 onMounted(() => {
   vue3This.isMounted = true;
@@ -222,6 +239,68 @@ onUnmounted(() => {
 onShow(() => {
   if (vue3This.isMounted) RecordApp.UniPageOnShow(vue3This);
 });
+
+const getFilePath = async (arrayBuffer) => {
+  // 1. 先保存到本地文件
+  const tempFilePath = await new Promise((resolve, reject) => {
+    RecordApp.UniSaveLocalFile(
+      `${fileName}.mp3`,
+      arrayBuffer,
+      (savePath) => {
+        resolve(savePath);
+      },
+      (errMsg) => {
+        reject(new Error(errMsg));
+      }
+    );
+  });
+
+  // 2. 保存到永久存储
+  const filePath = await new Promise((resolve, reject) => {
+    uni.saveFile({
+      tempFilePath: tempFilePath,
+      success: (res) => {
+        resolve(res.savedFilePath);
+      },
+      fail: (err) => {
+        reject(err);
+      }
+    });
+  });
+
+  return filePath;
+};
+
+// const uploadAndProcess = async (buffers, powerLevel, duration, sampleRate) => {
+//   if (isSummaryLoading.value) return;
+//   console.log('buffers', buffers);
+//   isSummaryLoading.value = true;
+//   try {
+//     console.log('arrayBuffer:', arrayBuffer);
+//     const filePath = await getFilePath(arrayBuffer);
+//     console.log('filePath:', filePath);
+//     if (!filePath) return;
+//     const newFileName = await uploadToOss(fileName, filePath);
+//     console.log('newFileName:', newFileName);
+//     if (!newFileName) return;
+//     const signatureUrl = await generateSignatureUrl(newFileName);
+//     console.log('signatureUrl:', signatureUrl);
+//     if (!signatureUrl) return;
+//     const taskId = await createTaskSummary(signatureUrl);
+//     console.log('taskId:', taskId);
+//     if (!taskId) return;
+//     const taskStatus = await getTaskStatus(taskId);
+//     console.log('getTaskStatus:', taskStatus);
+//     if (!taskStatus) return;
+//     const taskResult = await getTaskResult(taskStatus.MeetingAssistance);
+//     console.log('getTaskResult:', taskResult);
+
+//     isSummaryLoading.value = false;
+//   } catch (error) {
+//     console.error('上传和处理失败:', error);
+//     isSummaryLoading.value = false;
+//   }
+// };
 
 const recReq = () => {
   RecordApp.UniNativeUtsPlugin = null;
@@ -264,10 +343,65 @@ const openPermissionSetting = () => {
   }
 };
 
+const initSpeechRecognition = async () => {
+  const URL = 'wss://nls-gateway.cn-shanghai.aliyuncs.com/ws/v1';
+  const APPKEY = import.meta.env.VITE_APPKEY; // 替换为您的Appkey
+  const TOKEN = await getAccessToken(); // 替换为您的Token
+
+  speechTranscription.value = new SpeechTranscription({
+    url: URL,
+    appkey: APPKEY,
+    token: TOKEN
+  });
+
+  // 设置事件回调
+  speechTranscription.value.on('started', (msg) => {
+    console.log('识别开始:', msg);
+  });
+
+  speechTranscription.value.on('changed', (msg) => {
+    console.log('中间结果:', msg);
+    recognitionResult.value = msg;
+  });
+
+  speechTranscription.value.on('completed', (msg) => {
+    console.log('识别完成:', msg);
+  });
+
+  speechTranscription.value.on('closed', () => {
+    console.log('连接关闭');
+  });
+
+  speechTranscription.value.on('failed', (msg) => {
+    console.log('识别失败:', msg);
+  });
+
+  // 启动识别
+  speechTranscription.value.start(speechTranscription.value.defaultStartParams(), true, 6000).catch((error) => {
+    console.log('启动识别失败:', error);
+  });
+};
+
+const wsVoiceProcess = (buffers, powerLevel, duration, sampleRate, newBufferIdx) => {
+  //借用SampleData函数进行数据的连续处理，采样率转换是顺带的，得到新的pcm数据
+  let chunk = Recorder.SampleData(buffers, sampleRate, 16000, chunk);
+  let pcm = chunk.data;
+
+  //二进制pcm
+  let bytes = new Uint8Array(pcm.buffer);
+  console.log('二进制pcm', bytes);
+  //发送pcm出去
+  if (speechTranscription.value) {
+    speechTranscription.value.sendAudio(pcm);
+  }
+};
+
 const recStart = () => {
   console.log('正在打开...');
   RecordApp.UniWebViewActivate(vue3This);
-  tryStart_androidNotifyService();
+  // tryStart_androidNotifyService();
+
+  initSpeechRecognition();
 
   RecordApp.Start(
     {
@@ -282,8 +416,12 @@ const recStart = () => {
       },
 
       onProcess: (buffers, powerLevel, duration, sampleRate, newBufferIdx, asyncEnd) => {
-        recPowerTime.value = formatDuration(duration);
+        //全平台通用：可实时上传（发送）数据，配合Recorder.SampleData方法，将buffers中的新数据连续的转换成pcm上传，或使用mock方法将新数据连续的转码成其他格式上传，可以参考Recorder文档里面的：Demo片段列表 -> 实时转码并上传-通用版；基于本功能可以做到：实时转发数据、实时保存数据、实时语音识别（ASR）等
+
+        recordDuration.value = formatDuration(duration);
         voiceWaveRef.value.input(powerLevel);
+
+        // wsVoiceProcess(buffers, powerLevel, duration, sampleRate, newBufferIdx);
       },
       onProcess_renderjs: `function(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd){
         //App中在这里修改buffers才会改变生成的音频文件
@@ -318,6 +456,7 @@ const recStart = () => {
       console.log('录制中 appUseH5Rec', 2);
       isRecording.value = true;
       voiceWaveRef.value.init();
+      initSpeechRecognition();
     },
     (msg) => {
       console.log('开始录音失败：' + msg, 1);
@@ -330,8 +469,9 @@ const recStop = () => {
   console.log('正在结束录音...');
 
   RecordApp.Stop(
-    (arrayBuffer, duration, mime) => {
-      tryClose_androidNotifyService();
+    async (arrayBuffer, duration, mime) => {
+      // tryClose_androidNotifyService();
+
       isRecording.value = false;
       voiceWaveRef.value.clear();
 
@@ -352,50 +492,34 @@ const recStop = () => {
       );
 
       // #ifdef APP
-      RecordApp.UniSaveLocalFile(
-        fileName + '.mp3',
+      const filePath = await getFilePath(arrayBuffer);
+      const recordInfo = {
+        fileName,
+        mime,
+        duration,
+        durationText: formatDuration(duration),
+        startTimestamp,
+        startTimeText: formatDate(startTimestamp),
         arrayBuffer,
-        (savePath) => {
-          console.log('保存录音成功:', savePath);
-
-          // const audioBase64 = uni.arrayBufferToBase64(arrayBuffer);
-
-          uni.saveFile({
-            tempFilePath: savePath,
-            success: (res) => {
-              const savedFilePath = res.savedFilePath;
-              console.log('保存录音成功:', savedFilePath);
-
-              const recordInfo = {
-                fileName,
-                mime,
-                duration,
-                durationText: formatDuration(duration),
-                startTimestamp,
-                startTimeText: formatDate(startTimestamp),
-                arrayBuffer,
-                size: arrayBuffer.byteLength,
-                // audioBase64,
-                filePath: savedFilePath,
-                tempFilePath: savePath
-              };
-
-              let recordList = uni.getStorageSync('jarvis-record') || [];
-              recordList.unshift(recordInfo);
-              uni.setStorageSync('jarvis-record', recordList);
-            },
-            fail: (err) => {
-              console.error('保存录音失败:', err);
-              uni.showToast({ title: '保存录音失败', icon: 'error' });
-            }
-          });
-        },
-        (errMsg) => {
-          console.error('保存录音失败:', errMsg);
-          uni.showToast({ title: '保存录音失败', icon: 'error' });
-        }
-      );
+        size: arrayBuffer.byteLength,
+        filePath
+      };
+      let recordList = uni.getStorageSync('jarvis-record') || [];
+      recordList.unshift(recordInfo);
+      uni.setStorageSync('jarvis-record', recordList);
       // #endif
+
+      if (speechTranscription.value) {
+        speechTranscription.value
+          .close()
+          .then(() => {
+            console.log('语音识别已关闭');
+          })
+          .catch((error) => {
+            console.log('关闭语音识别失败:', error);
+          });
+        speechTranscription.value = null;
+      }
     },
     (msg) => {
       console.log('结束录音失败：' + msg, 1);
