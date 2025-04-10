@@ -182,7 +182,6 @@ const modules = ref([EffectCards]);
 
 /** 先引入Recorder （ 需先 npm install recorder-core ）**/
 import Recorder from 'recorder-core';
-Recorder.a = 1;
 
 /** H5、小程序环境中：引入需要的格式编码器、可视化插件，App环境中在renderjs中引入 **/
 // #ifdef H5 || MP-WEIXIN
@@ -209,16 +208,19 @@ import permision from '@/js_sdk/wa-permission/permission.js';
 const vue3This = getCurrentInstance().proxy;
 const isRecording = ref(false);
 const voiceWaveRef = ref(null);
+const recPowerTime = ref('');
+const startTimestamp = Date.now();
+const fileName = formatFileName(startTimestamp);
 
 onMounted(() => {
   vue3This.isMounted = true;
   RecordApp.UniPageOnShow(vue3This);
 });
 onUnmounted(() => {
-  RecordApp.Stop(); //清理资源，如果打开了录音没有关闭，这里将会进行关闭
+  RecordApp.Stop();
 });
 onShow(() => {
-  if (vue3This.isMounted) RecordApp.UniPageOnShow(vue3This); //onShow可能比mounted先执行，页面可能还未准备好
+  if (vue3This.isMounted) RecordApp.UniPageOnShow(vue3This);
 });
 
 const recReq = () => {
@@ -263,32 +265,63 @@ const openPermissionSetting = () => {
 };
 
 const recStart = () => {
+  console.log('正在打开...');
   RecordApp.UniWebViewActivate(vue3This);
-
-  const set = {
-    type: 'mp3',
-    sampleRate: 16000,
-    bitRate: 16,
-    audioTrackSet: {
-      noiseSuppression: true,
-      echoCancellation: true,
-      autoGainControl: true
-    },
-    onProcess: (buffers, powerLevel, duration, sampleRate, newBufferIdx, asyncEnd) => {
-      // 处理录音数据
-      console.log('分贝值===', powerLevel);
-      voiceWaveRef.value.input(powerLevel);
-    }
-  };
+  tryStart_androidNotifyService();
 
   RecordApp.Start(
-    set,
+    {
+      type: 'mp3',
+      sampleRate: 16000,
+      bitRate: 16,
+      audioTrackSet: {
+        //配置回声消除，H5、App、小程序均可用，但并不一定会生效；注意：H5、App+renderjs中需要在请求录音权限前进行相同配置RecordApp.RequestPermission_H5OpenSet后此配置才会生效
+        noiseSuppression: true,
+        echoCancellation: true,
+        autoGainControl: true
+      },
+
+      onProcess: (buffers, powerLevel, duration, sampleRate, newBufferIdx, asyncEnd) => {
+        recPowerTime.value = formatDuration(duration);
+        voiceWaveRef.value.input(powerLevel);
+      },
+      onProcess_renderjs: `function(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd){
+        //App中在这里修改buffers才会改变生成的音频文件
+        //App中是在renderjs中进行的可视化图形绘制，因此需要写在这里，this是renderjs模块的this（也可以用This变量）；如果代码比较复杂，请直接在renderjs的methods里面放个方法xxxFunc，这里直接使用this.xxxFunc(args)进行调用
+        if(this.voiceWaveRef){
+          this.voiceWaveRef.input(powerLevel);
+        }
+      }`,
+      onProcessBefore_renderjs: `function(buffers,powerLevel,duration,sampleRate,newBufferIdx){
+          //App中本方法会在逻辑层onProcess之前调用，因此修改的buffers会转发给逻辑层onProcess，本方法没有asyncEnd参数不支持异步处理
+          //一般无需提供本方法只用onProcess_renderjs就行，renderjs的onProcess内部调用过程：onProcessBefore_renderjs -> 转发给逻辑层onProcess -> onProcess_renderjs
+      }`,
+      takeoffEncodeChunk: (chunkBytes) => {
+        // console.log('chunkBytes===', chunkBytes);
+        //全平台通用：实时接收到编码器编码出来的音频片段数据，chunkBytes是Uint8Array二进制数据，可以实时上传（发送）出去
+        //App中如果未配置RecordApp.UniWithoutAppRenderjs时，建议提供此回调，因为录音结束后会将整个录音文件从renderjs传回逻辑层，由于uni-app的逻辑层和renderjs层数据交互性能实在太拉跨了，大点的文件传输会比较慢，提供此回调后可避免Stop时产生超大数据回传
+      },
+      takeoffEncodeChunk_renderjs: `function(chunkBytes){
+        //App中这里可以做一些仅在renderjs中才生效的事情，不提供也行，this是renderjs模块的this（也可以用This变量）
+      }`,
+
+      start_renderjs: `function(){
+        //App中可以放一个函数，在Start成功时renderjs中会先调用这里的代码，this是renderjs模块的this（也可以用This变量）
+        //放一些仅在renderjs中才生效的事情，比如初始化，不提供也行
+      }`,
+      stop_renderjs: `function(aBuf,duration,mime){
+        //App中可以放一个函数，在Stop成功时renderjs中会先调用这里的代码，this是renderjs模块的this（也可以用This变量）
+        this.audioData=aBuf; //留着给Stop时进行转码成wav播放
+      }`
+    },
     () => {
+      console.log('录制中 appUseH5Rec', 2);
       isRecording.value = true;
-      console.log('已开始录音');
+      voiceWaveRef.value.init();
     },
     (msg) => {
-      console.error('开始录音失败：' + msg);
+      console.log('开始录音失败：' + msg, 1);
+      isRecording.value = false;
     }
   );
 };
@@ -298,6 +331,7 @@ const recStop = () => {
 
   RecordApp.Stop(
     (arrayBuffer, duration, mime) => {
+      tryClose_androidNotifyService();
       isRecording.value = false;
       voiceWaveRef.value.clear();
 
@@ -316,6 +350,52 @@ const recStop = () => {
           'kbps',
         2
       );
+
+      // #ifdef APP
+      RecordApp.UniSaveLocalFile(
+        fileName + '.mp3',
+        arrayBuffer,
+        (savePath) => {
+          console.log('保存录音成功:', savePath);
+
+          // const audioBase64 = uni.arrayBufferToBase64(arrayBuffer);
+
+          uni.saveFile({
+            tempFilePath: savePath,
+            success: (res) => {
+              const savedFilePath = res.savedFilePath;
+              console.log('保存录音成功:', savedFilePath);
+
+              const recordInfo = {
+                fileName,
+                mime,
+                duration,
+                durationText: formatDuration(duration),
+                startTimestamp,
+                startTimeText: formatDate(startTimestamp),
+                arrayBuffer,
+                size: arrayBuffer.byteLength,
+                // audioBase64,
+                filePath: savedFilePath,
+                tempFilePath: savePath
+              };
+
+              let recordList = uni.getStorageSync('jarvis-record') || [];
+              recordList.unshift(recordInfo);
+              uni.setStorageSync('jarvis-record', recordList);
+            },
+            fail: (err) => {
+              console.error('保存录音失败:', err);
+              uni.showToast({ title: '保存录音失败', icon: 'error' });
+            }
+          });
+        },
+        (errMsg) => {
+          console.error('保存录音失败:', errMsg);
+          uni.showToast({ title: '保存录音失败', icon: 'error' });
+        }
+      );
+      // #endif
     },
     (msg) => {
       console.log('结束录音失败：' + msg, 1);
@@ -342,6 +422,51 @@ const recResume = () => {
     RecordApp.Resume();
     console.log('继续录音中...');
   }
+};
+
+const tryStart_androidNotifyService = () => {
+  if (RecordApp.UniIsApp()) {
+    console.log(
+      'App中提升后台录音的稳定性：需要启用后台录音保活服务（iOS不需要），Android 9开始，锁屏或进入后台一段时间后App可能会被禁止访问麦克风导致录音静音、无法录音（App中H5录音也受影响），需要原生层提供搭配常驻通知的Android后台录音保活服务（Foreground services）；可调用配套原生插件的androidNotifyService接口，或使用第三方保活插件',
+      '#4face6'
+    );
+  }
+  if (RecordApp.UniIsApp() != 1) return; //非Android App不处理
+
+  RecordApp.UniNativeUtsPluginCallAsync('androidNotifyService', {
+    title: '正在录音',
+    content: '正在录音中，请勿关闭App运行'
+  })
+    .then((data) => {
+      const nCode = data.notifyPermissionCode,
+        nMsg = data.notifyPermissionMsg;
+      console.log(
+        '搭配常驻通知的Android后台录音保活服务已打开，ForegroundService已运行(通知可能不显示或会延迟显示，并不影响服务运行)，通知显示状态(1有通知权限 3可能无权限)code=' +
+          nCode +
+          ' msg=' +
+          nMsg,
+        2
+      );
+    })
+    .catch((e) => {
+      console.log('原生插件的androidNotifyService接口调用出错：' + e.message, 1);
+      console.log(
+        '如果你已集成了配套的原生录音插件，并且是打包自定义基座运行，请检查本项目根目录的AndroidManifest.xml里面是否已经解开了注释，否则被注释掉的service不会包含在App中',
+        1
+      );
+    });
+};
+
+const tryClose_androidNotifyService = () => {
+  RecordApp.UniNativeUtsPluginCallAsync('androidNotifyService', {
+    close: true
+  })
+    .then(() => {
+      console.log('已关闭搭配常驻通知的Android后台录音保活服务');
+    })
+    .catch((e) => {
+      console.log('原生插件的androidNotifyService接口调用出错：' + e.message, 1);
+    });
 };
 </script>
 

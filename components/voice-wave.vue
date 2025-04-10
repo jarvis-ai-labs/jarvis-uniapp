@@ -64,12 +64,10 @@ const updateDots = () => {
     if (targetMatch && currentMatch) {
       const targetAlpha = parseFloat(targetMatch[0]);
       const currentAlpha = parseFloat(currentMatch[0]);
-
       // 加快过渡速度
       const alphaDiff = targetAlpha - currentAlpha;
       const newAlpha = currentAlpha + alphaDiff * 0.5; // 降低过渡速度，使动画更平滑
       dot.currentColor = `rgba(151, 151, 151, ${newAlpha})`;
-
       // 减慢回归速度
       const newTargetAlpha = Math.max(0, targetAlpha - 0.02); // 减慢消失速度
       dot.targetColor = `rgba(151, 151, 151, ${newTargetAlpha})`;
@@ -80,14 +78,12 @@ const updateDots = () => {
 // 绘制单个菱形点
 const drawDiamond = (x, y, size, color) => {
   if (!ctx.value) return;
-
   ctx.value.beginPath();
   ctx.value.moveTo(x, y - size); // 上点
   ctx.value.lineTo(x + size, y); // 右点
   ctx.value.lineTo(x, y + size); // 下点
   ctx.value.lineTo(x - size, y); // 左点
   ctx.value.closePath();
-
   ctx.value.setFillStyle(color);
   ctx.value.fill();
 };
@@ -95,15 +91,12 @@ const drawDiamond = (x, y, size, color) => {
 // 绘制所有点
 const drawDots = () => {
   if (!ctx.value) return;
-
   // 清除画布
   ctx.value.clearRect(0, 0, 160, 160);
-
   // 绘制所有点
   dots.value.forEach((dot) => {
     drawDiamond(dot.x, dot.y, dot.size, dot.currentColor);
   });
-
   // 绘制到画布
   ctx.value.draw();
 };
@@ -138,6 +131,10 @@ const input = (powerLevel) => {
 
 // 清除声纹效果
 const clear = () => {
+  dots.value.forEach((dot) => {
+    dot.currentColor = config.baseColor;
+    dot.targetColor = config.baseColor;
+  });
   if (ctx.value) {
     ctx.value.clearRect(0, 0, 160, 160);
   }
@@ -146,17 +143,14 @@ const clear = () => {
   }
 };
 
-// 初始化
-onMounted(() => {
+const init = () => {
   // 获取canvas上下文
   ctx.value = uni.createCanvasContext('voiceWave', instance.ctx);
-
   // 设置canvas尺寸
   dpr.value = uni.getSystemInfoSync().pixelRatio;
-
   // 开始动画
   animate();
-});
+};
 
 // 清理
 onUnmounted(() => {
@@ -166,6 +160,7 @@ onUnmounted(() => {
 });
 
 defineExpose({
+  init,
   input,
   clear
 });
