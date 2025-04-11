@@ -1,6 +1,6 @@
 <template>
   <view class="text-list">
-    <view class="textlodingbox" v-if="props.textLoading"><i class="uni-toast__icon uni-loading"></i></view>
+    <view class="textlodingbox" v-if="textLoading"><i class="uni-toast__icon uni-loading"></i></view>
     <view class="text-list-item" v-for="item in recordList" :key="item.startTimestamp" v-if="recordList.length > 0">
       <view class="text-item">
         <div class="item-left">
@@ -51,17 +51,21 @@ import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { formatDate } from '@/utils';
 
-const props = defineProps({
-  textLoading: {
-    type: Boolean,
-    default: false
-  }
-});
-
+const textLoading = ref(false);
 const recordList = ref([]);
 
 onLoad((options) => {
   recordList.value = uni.getStorageSync('jarvis-record') || [];
   console.log('录音列表===', recordList.value);
+});
+
+const refresh = () => {
+  recordList.value = uni.getStorageSync('jarvis-record') || [];
+  console.log('录音列表===', recordList.value);
+};
+
+defineExpose({
+  textLoading,
+  refresh
 });
 </script>

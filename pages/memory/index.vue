@@ -4,7 +4,7 @@
   <scroll-view scroll-y="true" class="main">
     <swiper-box />
 
-    <memory-list :textLoading="textLoading" />
+    <memory-list ref="memoryListRef" />
   </scroll-view>
 
   <view class="record-btn" @click="handleStartPause">
@@ -21,13 +21,6 @@ import CustomHeader from '@/components/custom-header.vue';
 import VoiceWave from '@/components/voice-wave.vue';
 import MemoryList from '@/components/memory-list.vue';
 import SwiperBox from '@/components/swiper-box.vue';
-
-import { formatDate, formatFileName, formatDuration } from '@/utils';
-import { ref, getCurrentInstance, onMounted, onUnmounted } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
-import { EffectCards } from '@/uni_modules/zebra-swiper/modules';
-
-const modules = ref([EffectCards]);
 
 /** 先引入Recorder （ 需先 npm install recorder-core ）**/
 import Recorder from 'recorder-core';
@@ -54,8 +47,10 @@ import 'recorder-core/src/app-support/app-miniProgram-wx-support.js';
 
 import permision from '@/js_sdk/wa-permission/permission.js';
 
+import { formatDate, formatFileName, formatDuration } from '@/utils';
+import { ref, getCurrentInstance, onMounted, onUnmounted } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
 import {
-  getAccessToken,
   uploadToOss,
   generateSignatureUrl,
   createKeyPointsTask,
@@ -70,7 +65,7 @@ const voiceWaveRef = ref(null);
 const recordDuration = ref('');
 const startTimestamp = Date.now();
 const fileName = formatFileName(startTimestamp);
-const textLoading = ref(false);
+const memoryListRef = ref(null);
 
 onMounted(() => {
   vue3This.isMounted = true;
@@ -147,6 +142,9 @@ const recStart = () => {
     onProcess_renderjs: `function(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd){
         //App中在这里修改buffers才会改变生成的音频文件
         //App中是在renderjs中进行的可视化图形绘制，因此需要写在这里，this是renderjs模块的this（也可以用This变量）；如果代码比较复杂，请直接在renderjs的methods里面放个方法xxxFunc，这里直接使用this.xxxFunc(args)进行调用
+        if(this.voiceWaveRef){
+          this.voiceWaveRef.input(buffers[buffers.length-1],powerLevel,sampleRate);
+        }
       }`,
     takeoffEncodeChunk: !vue3This.takeoffEncodeChunkSet
       ? null
@@ -204,8 +202,8 @@ const recStop = () => {
 
 // 获取文字
 const getTextResult = async (arrayBuffer, duration, mime) => {
-  if (textLoading.value) return;
-  textLoading.value = true;
+  if (memoryListRef.value.textLoading) return;
+  memoryListRef.value.textLoading = true;
 
   try {
     const filePath = await getFilePath(arrayBuffer);
@@ -241,10 +239,11 @@ const getTextResult = async (arrayBuffer, duration, mime) => {
     let recordList = uni.getStorageSync('jarvis-record') || [];
     recordList.unshift(recordInfo);
     uni.setStorageSync('jarvis-record', recordList);
+    memoryListRef.value.refresh();
   } catch (error) {
     console.log('失败', error);
   } finally {
-    textLoading.value = false;
+    memoryListRef.value.textLoading = false;
   }
 };
 
