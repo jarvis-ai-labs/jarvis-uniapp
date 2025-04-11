@@ -4,6 +4,16 @@
       <z-swiper-item>
         <view
           class="event-box"
+          style="background: url('/static/images/bg-event-1.png') no-repeat center center; background-size: 100% 100%">
+          <view class="box-content">
+            <uni-icons type="checkbox" size="24" color="#ffffff" />
+            <button class="event-btn">Event</button>
+          </view>
+        </view>
+      </z-swiper-item>
+      <z-swiper-item>
+        <view
+          class="event-box"
           style="background: url('/static/images/bg-event-2.png') no-repeat center center; background-size: 100% 100%">
           <view class="box-content active">
             <uni-icons type="checkbox" size="24" color="#ffffff" />
@@ -15,20 +25,23 @@
           </view>
         </view>
       </z-swiper-item>
-      <z-swiper-item>
-        <view
-          class="event-box"
-          style="background: url('/static/images/bg-event-1.png') no-repeat center center; background-size: 100% 100%">
-          <view class="box-content">
-            <uni-icons type="checkbox" size="24" color="#ffffff" />
-            <button class="event-btn">Event</button>
-          </view>
-        </view>
-      </z-swiper-item>
     </z-swiper>
 
     <view class="schedule-document">
       <z-swiper grabCursor effect="cards" :cardsEffect="{ rotate: false }" :modules="modules" class="schedule-swiper">
+        <z-swiper-item>
+          <view
+            class="schedule-box"
+            style="
+              background: url('/static/images/bg-schedule-1.png') no-repeat center center;
+              background-size: 100% 100%;
+            ">
+            <view class="box-content">
+              <text class="iconfont">&#xe61e;</text>
+              <text class="box-title">Schedule</text>
+            </view>
+          </view>
+        </z-swiper-item>
         <z-swiper-item>
           <view
             class="schedule-box"
@@ -44,35 +57,9 @@
             </view>
           </view>
         </z-swiper-item>
-        <z-swiper-item>
-          <view
-            class="schedule-box"
-            style="
-              background: url('/static/images/bg-schedule-1.png') no-repeat center center;
-              background-size: 100% 100%;
-            ">
-            <view class="box-content">
-              <text class="iconfont">&#xe61e;</text>
-              <text class="box-title">Schedule</text>
-            </view>
-          </view>
-        </z-swiper-item>
       </z-swiper>
 
       <z-swiper grabCursor effect="cards" :cardsEffect="{ rotate: false }" :modules="modules" class="document-swiper">
-        <z-swiper-item>
-          <view
-            class="document-box"
-            style="
-              background: url('/static/images/bg-document-2.png') no-repeat center center;
-              background-size: 100% 100%;
-            ">
-            <view class="box-content active">
-              <text class="iconfont">&#xe613;</text>
-              <view class="text"><text>JARVIS正在进行对市面智能穿戴分析， 生成了报告文档。</text></view>
-            </view>
-          </view>
-        </z-swiper-item>
         <z-swiper-item>
           <view
             class="document-box"
@@ -83,6 +70,19 @@
             <view class="box-content">
               <text class="iconfont">&#xe613;</text>
               <text class="box-title">News</text>
+            </view>
+          </view>
+        </z-swiper-item>
+        <z-swiper-item>
+          <view
+            class="document-box"
+            style="
+              background: url('/static/images/bg-document-2.png') no-repeat center center;
+              background-size: 100% 100%;
+            ">
+            <view class="box-content active">
+              <text class="iconfont">&#xe613;</text>
+              <view class="text"><text>JARVIS正在进行对市面智能穿戴分析， 生成了报告文档。</text></view>
             </view>
           </view>
         </z-swiper-item>
