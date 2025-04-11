@@ -205,8 +205,6 @@ import 'recorder-core/src/app-support/app-miniProgram-wx-support.js';
 
 import permision from '@/js_sdk/wa-permission/permission.js';
 
-import Nls from 'alibabacloud-nls';
-
 import {
   getAccessToken,
   uploadToOss,
@@ -223,10 +221,6 @@ const voiceWaveRef = ref(null);
 const recordDuration = ref('');
 const startTimestamp = Date.now();
 const fileName = formatFileName(startTimestamp);
-const isSummaryLoading = ref(false);
-const speechTranscription = ref(null);
-const sampleData = ref(null);
-const recognitionResult = ref('');
 
 onMounted(() => {
   vue3This.isMounted = true;
@@ -314,7 +308,9 @@ const openPermissionSetting = () => {
 const recStart = () => {
   console.log('正在打开...');
   RecordApp.UniWebViewActivate(vue3This);
+
   voiceWaveRef.value.init();
+  isRecording.value = true;
 
   RecordApp.Start({
     type: 'mp3',
@@ -327,12 +323,9 @@ const recStart = () => {
     },
     onProcess: (buffers, powerLevel, duration, sampleRate, newBufferIdx, asyncEnd) => {
       recordDuration.value = formatDuration(duration);
-      voiceWaveRef.value.input(powerLevel);
+      voiceWaveRef.value.input(buffers[buffers.length - 1], powerLevel, sampleRate);
     },
     onProcess_renderjs: `function(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd){
-        if(this.voiceWaveRef){
-          this.voiceWaveRef.input(powerLevel);
-        }
       }`,
     onProcessBefore_renderjs: `function(buffers,powerLevel,duration,sampleRate,newBufferIdx){
       }`,
@@ -349,7 +342,6 @@ const recStart = () => {
 
 const recStop = () => {
   console.log('正在结束录音...');
-
   isRecording.value = false;
   voiceWaveRef.value.clear();
 

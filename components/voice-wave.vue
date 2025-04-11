@@ -6,6 +6,7 @@
 import { ref, onMounted, onUnmounted, getCurrentInstance } from 'vue';
 
 const instance = getCurrentInstance();
+
 const ctx = ref(null);
 const animationFrame = ref(null);
 const dpr = ref(1);
@@ -66,10 +67,10 @@ const updateDots = () => {
       const currentAlpha = parseFloat(currentMatch[0]);
       // 加快过渡速度
       const alphaDiff = targetAlpha - currentAlpha;
-      const newAlpha = currentAlpha + alphaDiff * 0.5; // 降低过渡速度，使动画更平滑
+      const newAlpha = currentAlpha + alphaDiff * 0.8;
       dot.currentColor = `rgba(151, 151, 151, ${newAlpha})`;
-      // 减慢回归速度
-      const newTargetAlpha = Math.max(0, targetAlpha - 0.02); // 减慢消失速度
+      // 加快回归速度
+      const newTargetAlpha = Math.max(0, targetAlpha - 0.05);
       dot.targetColor = `rgba(151, 151, 151, ${newTargetAlpha})`;
     }
   });
@@ -105,25 +106,60 @@ const drawDots = () => {
 const animate = () => {
   updateDots();
   drawDots();
+  // animationFrame.value = requestAnimationFrame(animate);
   animationFrame.value = setTimeout(animate, 16); // 约60fps
 };
 
 // 输入音频数据
-const input = (powerLevel) => {
-  // 将powerLevel转换为0-1之间的值，并增加灵敏度
-  const normalizedPower = Math.min(1, Math.max(0, powerLevel / 50)); // 降低分母，提高灵敏度
+const input = (pcmData, powerLevel, sampleRate) => {
+  // 参数检查
+  if (!pcmData || !sampleRate) return;
 
-  // 根据声音强度更新点的目标颜色
+  // 计算当前帧的音频数据
+  const bufferSize = Math.max(1, Math.floor(sampleRate / 30)); // 确保bufferSize至少为1
+  const len = Math.min(bufferSize, pcmData.length);
+
+  // 计算当前帧的平均振幅，使用安全的数值计算
+  let sum = 0;
+  let validCount = 0;
+  for (let i = 0; i < len; i++) {
+    const value = pcmData[i];
+    if (typeof value === 'number' && !isNaN(value)) {
+      sum += Math.abs(value);
+      validCount++;
+    }
+  }
+
+  // 确保有有效数据
+  if (validCount === 0) {
+    return;
+  }
+
+  const amplitude = sum / validCount;
+
+  // 将振幅转换为0-1之间的值，使用安全的数值计算
+  const normalizedAmplitude = Math.min(1, Math.max(0, amplitude / 64));
+
+  // 根据振幅更新点的目标颜色
   dots.value.forEach((dot) => {
-    const distanceRatio = (dot.radius - config.startRadius) / (config.endRadius - config.startRadius);
+    try {
+      const distanceRatio = (dot.radius - config.startRadius) / (config.endRadius - config.startRadius);
 
-    // 声音越大，影响范围越大
-    if (distanceRatio < normalizedPower) {
-      // 在影响范围内的点，设置较高的不透明度，并增加对比度
-      const alpha = 1.2 * (1 - distanceRatio); // 增加对比度
-      dot.targetColor = `rgba(151, 151, 151, ${alpha})`;
-    } else {
-      // 不在影响范围内的点，快速设置为透明
+      // 使用正弦函数计算波形效果，确保参数有效
+      const wave = Math.sin(Math.max(-1, Math.min(1, distanceRatio * Math.PI * 2 + Date.now() * 0.02)));
+      const waveEffect = (wave + 1) / 2;
+
+      // 振幅越大，影响范围越大
+      if (distanceRatio < normalizedAmplitude) {
+        // 在影响范围内的点，设置较高的不透明度，并增加波形效果
+        const alpha = Math.min(1, Math.max(0, 1.5 * (1 - distanceRatio) * waveEffect));
+        dot.targetColor = `rgba(151, 151, 151, ${alpha})`;
+      } else {
+        // 不在影响范围内的点，快速设置为透明
+        dot.targetColor = config.baseColor;
+      }
+    } catch (e) {
+      // 单个点更新出错时，设置为透明
       dot.targetColor = config.baseColor;
     }
   });
@@ -131,15 +167,20 @@ const input = (powerLevel) => {
 
 // 清除声纹效果
 const clear = () => {
+  // 立即清除所有点
   dots.value.forEach((dot) => {
     dot.currentColor = config.baseColor;
     dot.targetColor = config.baseColor;
   });
+
   if (ctx.value) {
     ctx.value.clearRect(0, 0, 160, 160);
+    ctx.value.draw();
   }
+
   if (animationFrame.value) {
     clearTimeout(animationFrame.value);
+    animationFrame.value = null;
   }
 };
 
@@ -154,9 +195,7 @@ const init = () => {
 
 // 清理
 onUnmounted(() => {
-  if (animationFrame.value) {
-    clearTimeout(animationFrame.value);
-  }
+  clear();
 });
 
 defineExpose({
@@ -165,16 +204,3 @@ defineExpose({
   clear
 });
 </script>
-
-<style scoped>
-.voice-wave {
-  width: 160px;
-  height: 160px;
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  background: transparent;
-  z-index: 1;
-}
-</style>
