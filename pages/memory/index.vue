@@ -7,8 +7,14 @@
     <memory-list ref="memoryListRef" />
   </scroll-view>
 
-  <view class="record-btn" @click="handleStartPause">
-    <image src="/static/images/record-btn.png" mode="widthFix" />
+  <view class="record-btn">
+    <view class="record-btn-box">
+      <button class="stop-btn" v-if="isRecording" @click="recStop">
+        <uni-icons custom-prefix="iconfont" type="icon-stop" size="30" color="#ffffff" />
+      </button>
+      <image src="/static/images/record-btn.png" mode="widthFix" v-else @click="recReq" />
+    </view>
+
     <voice-wave ref="voiceWaveRef" />
   </view>
 
@@ -142,9 +148,6 @@ const recStart = () => {
     onProcess_renderjs: `function(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd){
         //App中在这里修改buffers才会改变生成的音频文件
         //App中是在renderjs中进行的可视化图形绘制，因此需要写在这里，this是renderjs模块的this（也可以用This变量）；如果代码比较复杂，请直接在renderjs的methods里面放个方法xxxFunc，这里直接使用this.xxxFunc(args)进行调用
-        if(this.voiceWaveRef){
-          this.voiceWaveRef.input(buffers[buffers.length-1],powerLevel,sampleRate);
-        }
       }`,
     takeoffEncodeChunk: !vue3This.takeoffEncodeChunkSet
       ? null
@@ -244,14 +247,6 @@ const getTextResult = async (arrayBuffer, duration, mime) => {
     console.log('失败', error);
   } finally {
     memoryListRef.value.textLoading = false;
-  }
-};
-
-const handleStartPause = () => {
-  if (isRecording.value) {
-    recStop();
-  } else {
-    recReq();
   }
 };
 
@@ -360,14 +355,18 @@ import 'recorder-core/src/engine/mp3-engine'
 import 'recorder-core/src/extensions/waveview'
 
 export default {
-    mounted(){
-        //App的renderjs必须调用的函数，传入当前模块this
-        RecordApp.UniRenderjsRegister(this);
-    },
-    methods: {
-        //这里定义的方法，在逻辑层中可通过 RecordApp.UniWebViewVueCall(this,'this.xxxFunc()') 直接调用
-        //调用逻辑层的方法，请直接用 this.$ownerInstance.callMethod("xxxFunc",{args}) 调用，二进制数据需转成base64来传递
-    }
+  data() {
+    return {
+    };
+  },
+  mounted() {
+    //App的renderjs必须调用的函数，传入当前模块this
+    RecordApp.UniRenderjsRegister(this);
+  },
+  methods: {
+    //这里定义的方法，在逻辑层中可通过 RecordApp.UniWebViewVueCall(this,'this.xxxFunc()') 直接调用
+    //调用逻辑层的方法，请直接用 this.$ownerInstance.callMethod("xxxFunc",{args}) 调用，二进制数据需转成base64来传递
+  }
 }
 </script>
 <!-- #endif -->
