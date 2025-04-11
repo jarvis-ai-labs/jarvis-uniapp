@@ -40,7 +40,7 @@
 <style lang="scss" scoped>
 .custom-header {
   width: 100%;
-  height: 200px;
+  height: 180px;
   padding: 30px;
   background: url('/static/images/bg-header.png') no-repeat left center;
   background-size: auto 120%;

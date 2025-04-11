@@ -83,20 +83,19 @@ export const getAccessToken = async () => {
       method: 'GET'
     });
 
-    if (response.statusCode === 200 && response.data.Token) {
+    console.log(`获取新Token`, response);
+    if (response.statusCode === 200) {
       accessTokenVal = response.data.Token.Id;
       accessTokenExpireVal = response.data.Token.ExpireTime * 1000;
       // 将 Token 和过期时间存储到缓存
       uni.setStorageSync(accessTokenKey, accessTokenVal);
       uni.setStorageSync(accessTokenExpireKey, accessTokenExpireVal.toString());
-
-      console.log(`获取新Token`, accessTokenVal);
       return accessTokenVal;
     } else {
-      console.log(`获取新Token失败1`, response);
+      console.log(`获取新Token失败`);
     }
   } catch (error) {
-    console.log(`获取新Token失败2`, error);
+    console.log(`获取新Token失败`, error);
   }
 };
 
@@ -133,6 +132,7 @@ export const uploadToOss = async (fileName, filePath) => {
           signature: signature
         },
         success: async (res) => {
+          console.log('上传录音成功', res);
           resolve(newFileName);
         },
         fail: (err) => {
@@ -142,7 +142,7 @@ export const uploadToOss = async (fileName, filePath) => {
       });
     });
   } catch (error) {
-    console.log(`上传录音失败`);
+    console.log(`上传录音失败`, error);
   }
 };
 
@@ -158,14 +158,15 @@ export const generateSignatureUrl = async (fileName) => {
       authorizationV4: true
     });
     const signatureUrl = await client.signatureUrlV4('GET', 3600, { headers: {} }, fileName);
+    console.log('生成在线链接', signatureUrl);
     return signatureUrl;
   } catch (error) {
-    console.log('生成在线链接失败');
+    console.log('生成在线链接失败', error);
   }
 };
 
 /**创建转录任务 */
-export const createTaskTranscription = async (audioUrl) => {
+export const createTranscriptionTask = async (audioUrl) => {
   try {
     // 构建请求参数
     const date = new Date();
@@ -273,18 +274,19 @@ export const createTaskTranscription = async (audioUrl) => {
       data: requestBody
     });
 
+    console.log('创建转录任务', response);
     if (response.statusCode === 200) {
       return response.data.Data.TaskId;
     } else {
       console.log(`创建转录任务失败`);
     }
   } catch (error) {
-    console.log(`创建转录任务失败`);
+    console.log(`创建转录任务失败`, error);
   }
 };
 
 /**创建要点提炼任务 */
-export const createTaskSummary = async (audioUrl) => {
+export const createKeyPointsTask = async (audioUrl) => {
   try {
     // 构建请求参数
     const date = new Date();
@@ -390,17 +392,18 @@ export const createTaskSummary = async (audioUrl) => {
       data: requestBody
     });
 
+    console.log('创建要点提炼任务', response);
     if (response.statusCode === 200) {
       return response.data.Data.TaskId;
     } else {
-      console.log(`创建转录任务失败`);
+      console.log(`创建要点提炼任务失败`);
     }
   } catch (error) {
-    console.log(`创建转录任务失败`);
+    console.log(`创建要点提炼任务失败`, error);
   }
 };
 
-/**查询任务结果 */
+/**查询任务信息 */
 export const getTaskInfo = async (taskId) => {
   try {
     // 1. 构建请求参数
@@ -487,18 +490,19 @@ export const getTaskInfo = async (taskId) => {
       }
     });
 
+    console.log('查询任务信息', response);
     if (response.statusCode === 200) {
       return response.data.Data;
     } else {
-      console.log(`查询转录状态失败`);
+      console.log(`查询任务信息失败`);
     }
   } catch (error) {
-    console.log(`查询转录状态失败`);
+    console.log(`查询任务信息失败`, error);
   }
 };
 
-/**查询任务状态 */
-export const getTaskStatus = async (taskId) => {
+/**查询任务结果URL */
+export const getTaskResultUrl = async (taskId, taskName) => {
   try {
     let status = 'RUNNING';
     let maxRetries = 10; // 最大重试次数
@@ -512,29 +516,27 @@ export const getTaskStatus = async (taskId) => {
       if (status === 'SUCCESS' || status === 'COMPLETED') {
         // 如果有转写结果URL，需要下载结果
         if (result.Result && result.Result) {
-          // "Result":{
-          //     "MeetingAssistance":"",
-          //     "Transcription":""
-          // }
-          return result.Result;
+          console.log('查询任务结果URL', result.Result);
+          const { MeetingAssistance, Transcription } = result.Result;
+          return { MeetingAssistance, Transcription };
         }
       } else if (status === 'FAILED') {
-        console.log(`转录失败`);
+        console.log(`任务失败`);
         return null; // 转录失败时直接返回 null
       } else {
         // 任务仍在进行中，等待后再次查询
-        console.log(`第${retryCount + 1}次查询转录状态...`);
-        await new Promise((resolve) => setTimeout(resolve, 3000)); // 等待3秒
+        console.log(`第${retryCount + 1}次查询 ${taskName} 任务状态...`);
+        await new Promise((resolve) => setTimeout(resolve, 5000));
         retryCount++;
       }
     }
 
     if (retryCount >= maxRetries) {
-      console.log('转录超时，请稍后再试');
-      return null; // 转录超时后直接返回 null
+      console.log('任务超时，请稍后再试');
+      return null; // 任务超时后直接返回 null
     }
   } catch (error) {
-    console.log(`转录失败`);
+    console.log(`任务失败`, error);
     return null; // 发生错误时直接返回 null
   }
 };
@@ -546,13 +548,14 @@ export const getTaskResult = async (url) => {
       url: url,
       method: 'GET'
     });
+
+    console.log('查询任务结果', response);
     if (response.statusCode === 200) {
-      console.log('转录结果', response.data);
       return response.data;
     } else {
-      console.log('转录失败');
+      console.log('任务失败');
     }
   } catch (error) {
-    console.log(`转录失败`);
+    console.log(`任务失败`, error);
   }
 };

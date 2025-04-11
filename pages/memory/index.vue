@@ -2,163 +2,9 @@
   <custom-header />
 
   <scroll-view scroll-y="true" class="main">
-    <view class="swiper-box">
-      <z-swiper grabCursor effect="cards" :cardsEffect="{ rotate: false }" :modules="modules" class="event-swiper">
-        <z-swiper-item>
-          <view
-            class="event-box"
-            style="
-              background: url('/static/images/bg-event-2.png') no-repeat center center;
-              background-size: 100% 100%;
-            ">
-            <view class="box-content active">
-              <uni-icons type="checkbox" size="24" color="#ffffff" />
-              <view class="text"><text>行程详情</text></view>
-              <view class="text"><text>出发时间</text> <text>17:20</text></view>
-              <view class="text"><text>路线</text> <text>驾车路线(预计20分钟，途径东三环)</text></view>
-              <view class="text"><text>提醒</text> <text>提前10分钟通知</text></view>
-              <button class="event-btn">晚餐|18:00|国贸大厦</button>
-            </view>
-          </view>
-        </z-swiper-item>
-        <z-swiper-item>
-          <view
-            class="event-box"
-            style="
-              background: url('/static/images/bg-event-1.png') no-repeat center center;
-              background-size: 100% 100%;
-            ">
-            <view class="box-content">
-              <uni-icons type="checkbox" size="24" color="#ffffff" />
-              <button class="event-btn">Event</button>
-            </view>
-          </view>
-        </z-swiper-item>
-      </z-swiper>
+    <swiper-box />
 
-      <view class="schedule-document">
-        <z-swiper grabCursor effect="cards" :cardsEffect="{ rotate: false }" :modules="modules" class="schedule-swiper">
-          <z-swiper-item>
-            <view
-              class="schedule-box"
-              style="
-                background: url('/static/images/bg-schedule-2.png') no-repeat center center;
-                background-size: 100% 100%;
-              ">
-              <view class="box-content active">
-                <text class="iconfont">&#xe61e;</text>
-                <view class="text"><text>与技术部门探讨app 接入硬件需求</text></view>
-                <view class="text text2"><text>提醒</text><text>提前5分钟通知</text></view>
-                <view class="text"><text>会议 | 15:00 | 上海</text></view>
-              </view>
-            </view>
-          </z-swiper-item>
-          <z-swiper-item>
-            <view
-              class="schedule-box"
-              style="
-                background: url('/static/images/bg-schedule-1.png') no-repeat center center;
-                background-size: 100% 100%;
-              ">
-              <view class="box-content">
-                <text class="iconfont">&#xe61e;</text>
-                <text class="box-title">Schedule</text>
-              </view>
-            </view>
-          </z-swiper-item>
-        </z-swiper>
-
-        <z-swiper grabCursor effect="cards" :cardsEffect="{ rotate: false }" :modules="modules" class="document-swiper">
-          <z-swiper-item>
-            <view
-              class="document-box"
-              style="
-                background: url('/static/images/bg-document-2.png') no-repeat center center;
-                background-size: 100% 100%;
-              ">
-              <view class="box-content active">
-                <text class="iconfont">&#xe613;</text>
-                <view class="text"><text>JARVIS正在进行对市面智能穿戴分析， 生成了报告文档。</text></view>
-              </view>
-            </view>
-          </z-swiper-item>
-          <z-swiper-item>
-            <view
-              class="document-box"
-              style="
-                background: url('/static/images/bg-document-1.png') no-repeat center center;
-                background-size: 100% 100%;
-              ">
-              <view class="box-content">
-                <text class="iconfont">&#xe613;</text>
-                <text class="box-title">News</text>
-              </view>
-            </view>
-          </z-swiper-item>
-        </z-swiper>
-      </view>
-    </view>
-
-    <view class="text-list">
-      <view class="text-list-item">
-        <view class="text-item">
-          <div class="item-left">
-            <div class="type-box">
-              <image src="/static/images/icon-type-write.png" mode="widthFix" />
-            </div>
-            <view class="text-box">
-              <view class="title">2025.3.28</view>
-              <view class="content">
-                <uni-icons type="location" size="20" color="#979797" />
-                shanghai
-              </view>
-            </view>
-          </div>
-          <view class="item-right">
-            <button class="btn-text">Text</button>
-          </view>
-        </view>
-        <view class="text-item2">
-          <view class="text-title">实时转写中···</view>
-          <scroll-view scroll-y="true" class="text-item2-list">
-            <view class="text-box">
-              <view class="title">
-                <text>说话人1</text>
-                <text>15:31:21 PM</text>
-              </view>
-              <view class="content"> "明天休息了，有空聚聚吗" </view>
-            </view>
-            <view class="text-box">
-              <view class="title">
-                <text>说话人2</text>
-                <text>15:31:21 PM</text>
-              </view>
-              <view class="content"> "有的，去哪里" </view>
-            </view>
-          </scroll-view>
-        </view>
-      </view>
-
-      <view class="text-list-item">
-        <view class="text-item">
-          <div class="item-left">
-            <div class="type-box">
-              <image src="/static/images/icon-type-write.png" mode="widthFix" />
-            </div>
-            <view class="text-box">
-              <view class="title">2025.3.28</view>
-              <view class="content">
-                <uni-icons type="location" size="20" color="#979797" />
-                shanghai
-              </view>
-            </view>
-          </div>
-          <view class="item-right">
-            <button class="btn-text">Text</button>
-          </view>
-        </view>
-      </view>
-    </view>
+    <memory-list :textLoading="textLoading" />
   </scroll-view>
 
   <view class="record-btn" @click="handleStartPause">
@@ -173,6 +19,9 @@
 import CustomTabbar from '@/components/custom-tabbar.vue';
 import CustomHeader from '@/components/custom-header.vue';
 import VoiceWave from '@/components/voice-wave.vue';
+import MemoryList from '@/components/memory-list.vue';
+import SwiperBox from '@/components/swiper-box.vue';
+
 import { formatDate, formatFileName, formatDuration } from '@/utils';
 import { ref, getCurrentInstance, onMounted, onUnmounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
@@ -209,10 +58,10 @@ import {
   getAccessToken,
   uploadToOss,
   generateSignatureUrl,
-  createTaskSummary,
-  getTaskInfo,
-  getTaskStatus,
-  getTaskResult
+  createKeyPointsTask,
+  getTaskResultUrl,
+  getTaskResult,
+  createTranscriptionTask
 } from '@/api/api';
 
 const vue3This = getCurrentInstance().proxy;
@@ -221,6 +70,7 @@ const voiceWaveRef = ref(null);
 const recordDuration = ref('');
 const startTimestamp = Date.now();
 const fileName = formatFileName(startTimestamp);
+const textLoading = ref(false);
 
 onMounted(() => {
   vue3This.isMounted = true;
@@ -232,37 +82,6 @@ onUnmounted(() => {
 onShow(() => {
   if (vue3This.isMounted) RecordApp.UniPageOnShow(vue3This);
 });
-
-const getFilePath = async (arrayBuffer) => {
-  // 1. 先保存到本地文件
-  const tempFilePath = await new Promise((resolve, reject) => {
-    RecordApp.UniSaveLocalFile(
-      `${fileName}.mp3`,
-      arrayBuffer,
-      (savePath) => {
-        resolve(savePath);
-      },
-      (errMsg) => {
-        reject(new Error(errMsg));
-      }
-    );
-  });
-
-  // 2. 保存到永久存储
-  const filePath = await new Promise((resolve, reject) => {
-    uni.saveFile({
-      tempFilePath: tempFilePath,
-      success: (res) => {
-        resolve(res.savedFilePath);
-      },
-      fail: (err) => {
-        reject(err);
-      }
-    });
-  });
-
-  return filePath;
-};
 
 const recReq = () => {
   RecordApp.UniNativeUtsPlugin = null;
@@ -326,16 +145,28 @@ const recStart = () => {
       voiceWaveRef.value.input(buffers[buffers.length - 1], powerLevel, sampleRate);
     },
     onProcess_renderjs: `function(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd){
+        //App中在这里修改buffers才会改变生成的音频文件
+        //App中是在renderjs中进行的可视化图形绘制，因此需要写在这里，this是renderjs模块的this（也可以用This变量）；如果代码比较复杂，请直接在renderjs的methods里面放个方法xxxFunc，这里直接使用this.xxxFunc(args)进行调用
       }`,
-    onProcessBefore_renderjs: `function(buffers,powerLevel,duration,sampleRate,newBufferIdx){
+    takeoffEncodeChunk: !vue3This.takeoffEncodeChunkSet
+      ? null
+      : (chunkBytes) => {
+          //全平台通用：实时接收到编码器编码出来的音频片段数据，chunkBytes是Uint8Array二进制数据，可以实时上传（发送）出去
+          //App中如果未配置RecordApp.UniWithoutAppRenderjs时，建议提供此回调，因为录音结束后会将整个录音文件从renderjs传回逻辑层，由于uni-app的逻辑层和renderjs层数据交互性能实在太拉跨了，大点的文件传输会比较慢，提供此回调后可避免Stop时产生超大数据回传
+        },
+    takeoffEncodeChunk_renderjs: !vue3This.takeoffEncodeChunkSet
+      ? null
+      : `function(chunkBytes){
+        //App中这里可以做一些仅在renderjs中才生效的事情，不提供也行，this是renderjs模块的this（也可以用This变量）
       }`,
-    takeoffEncodeChunk: (chunkBytes) => {},
-    takeoffEncodeChunk_renderjs: `function(chunkBytes){
-      }`,
+
     start_renderjs: `function(){
+        //App中可以放一个函数，在Start成功时renderjs中会先调用这里的代码，this是renderjs模块的this（也可以用This变量）
+        //放一些仅在renderjs中才生效的事情，比如初始化，不提供也行
       }`,
     stop_renderjs: `function(aBuf,duration,mime){
-        this.audioData=aBuf;
+        //App中可以放一个函数，在Stop成功时renderjs中会先调用这里的代码，this是renderjs模块的this（也可以用This变量）
+        this.audioData=aBuf; //留着给Stop时进行转码成wav播放
       }`
   });
 };
@@ -363,28 +194,58 @@ const recStop = () => {
         2
       );
 
-      // #ifdef APP
-      const filePath = await getFilePath(arrayBuffer);
-      const recordInfo = {
-        fileName,
-        mime,
-        duration,
-        durationText: formatDuration(duration),
-        startTimestamp,
-        startTimeText: formatDate(startTimestamp),
-        arrayBuffer,
-        size: arrayBuffer.byteLength,
-        filePath
-      };
-      let recordList = uni.getStorageSync('jarvis-record') || [];
-      recordList.unshift(recordInfo);
-      uni.setStorageSync('jarvis-record', recordList);
-      // #endif
+      getTextResult(arrayBuffer, duration, mime);
     },
     (msg) => {
       console.log('结束录音失败：' + msg, 1);
     }
   );
+};
+
+// 获取文字
+const getTextResult = async (arrayBuffer, duration, mime) => {
+  if (textLoading.value) return;
+  textLoading.value = true;
+
+  try {
+    const filePath = await getFilePath(arrayBuffer);
+    if (!filePath) return;
+
+    const newFileName = await uploadToOss(fileName, filePath);
+
+    const signatureUrl = await generateSignatureUrl(newFileName);
+
+    const pointsId = await createKeyPointsTask(signatureUrl);
+    const transcriptionId = await createTranscriptionTask(signatureUrl);
+
+    const pointsUrl = await getTaskResultUrl(pointsId, '要点提炼');
+    const transcriptionUrl = await getTaskResultUrl(transcriptionId, '转录');
+
+    const pointsResult = await getTaskResult(pointsUrl.MeetingAssistance);
+    const transcriptionResult = await getTaskResult(transcriptionUrl.Transcription);
+
+    const recordInfo = {
+      fileName,
+      mime,
+      duration,
+      durationText: formatDuration(duration),
+      startTimestamp,
+      startTimeText: formatDate(startTimestamp),
+      arrayBuffer,
+      size: arrayBuffer.byteLength,
+      filePath,
+      pointsData: pointsResult.MeetingAssistance,
+      transcriptionData: transcriptionResult.Transcription
+    };
+    console.log('录音信息', recordInfo);
+    let recordList = uni.getStorageSync('jarvis-record') || [];
+    recordList.unshift(recordInfo);
+    uni.setStorageSync('jarvis-record', recordList);
+  } catch (error) {
+    console.log('失败', error);
+  } finally {
+    textLoading.value = false;
+  }
 };
 
 const handleStartPause = () => {
@@ -393,6 +254,34 @@ const handleStartPause = () => {
   } else {
     recReq();
   }
+};
+
+const getFilePath = (arrayBuffer) => {
+  return new Promise((resolve, reject) => {
+    RecordApp.UniSaveLocalFile(
+      fileName + '.mp3',
+      arrayBuffer,
+      (savePath) => {
+        console.log('UniSaveLocalFile:', savePath);
+        uni.saveFile({
+          tempFilePath: savePath,
+          success: (res) => {
+            const filePath = res.savedFilePath;
+            console.log('saveFile:', filePath);
+            resolve(filePath);
+          },
+          fail: (err) => {
+            console.error('保存录音失败:', err);
+            reject(err);
+          }
+        });
+      },
+      (errMsg) => {
+        console.error('保存录音失败:', errMsg);
+        reject(errMsg);
+      }
+    );
+  });
 };
 
 const recPause = () => {

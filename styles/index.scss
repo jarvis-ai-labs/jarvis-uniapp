@@ -1,12 +1,12 @@
 .main {
-  height: calc(100vh - 200px - 80px);
+  height: calc(100vh - 180px - 60px);
 }
 
 .record-btn {
   width: 60px;
   height: 60px;
   position: fixed;
-  bottom: 50px;
+  bottom: 40px;
   left: 0;
   right: 0;
   margin: auto;
@@ -180,7 +180,21 @@
 
 .text-list {
   width: 100%;
-  padding: 0 30px;
+  padding: 0 30px 50px 30px;
+
+  .textlodingbox {
+    width: 100%;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    .uni-toast__icon {
+      margin: 0;
+      width: 30px;
+      height: 30px;
+    }
+  }
+
   .text-list-item {
     width: 100%;
     background: #1d1d23;
