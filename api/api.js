@@ -26,11 +26,11 @@ export const getAccessToken = async () => {
   // 检查 Token 是否有效
   let accessTokenVal = uni.getStorageSync(accessTokenKey);
   let accessTokenExpireVal = parseInt(uni.getStorageSync(accessTokenExpireKey));
-  console.log('获取授权令牌:', accessTokenVal);
+  console.log('缓存中的Token:', accessTokenVal);
 
   // 如果当前 Token 未过期
   if (accessTokenVal && accessTokenExpireVal && accessTokenExpireVal > Date.now()) {
-    return;
+    return accessTokenVal;
   }
 
   try {
@@ -90,13 +90,13 @@ export const getAccessToken = async () => {
       uni.setStorageSync(accessTokenKey, accessTokenVal);
       uni.setStorageSync(accessTokenExpireKey, accessTokenExpireVal.toString());
 
-      console.log(`获取授权令牌成功`, accessTokenVal);
+      console.log(`获取新Token`, accessTokenVal);
       return accessTokenVal;
     } else {
-      console.log(`获取授权令牌失败1`, response);
+      console.log(`获取新Token失败1`, response);
     }
   } catch (error) {
-    console.log(`获取授权令牌失败2`, error);
+    console.log(`获取新Token失败2`, error);
   }
 };
 
