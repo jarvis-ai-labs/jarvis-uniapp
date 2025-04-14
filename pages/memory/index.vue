@@ -54,7 +54,7 @@ import 'recorder-core/src/app-support/app-miniProgram-wx-support.js';
 import permision from '@/js_sdk/wa-permission/permission.js';
 
 import { formatDate, formatFileName, formatDuration } from '@/utils';
-import { ref, getCurrentInstance, onMounted, onUnmounted } from 'vue';
+import { ref, getCurrentInstance, onMounted, onUnmounted, computed } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import {
   uploadToOss,
@@ -68,6 +68,7 @@ import {
 import { useStore } from 'vuex';
 
 const store = useStore();
+const recordList = computed(() => store.state.recordList);
 const vue3This = getCurrentInstance().proxy;
 const isRecording = ref(false);
 const voiceWaveRef = ref(null);
@@ -275,10 +276,7 @@ const getTextResult = async (arrayBuffer, duration, mime) => {
       store.commit('setPopupEventData', recordInfo);
     }
 
-    let recordList = uni.getStorageSync('jarvis-record') || [];
-    recordList.unshift(recordInfo);
-    uni.setStorageSync('jarvis-record', recordList);
-    memoryListRef.value.refresh();
+    store.commit('setRecordList', [recordInfo, ...recordList.value]);
   } catch (error) {
     console.log('失败', error);
   } finally {

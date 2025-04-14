@@ -6,7 +6,7 @@
       :cardsEffect="{ rotate: false }"
       :modules="modules"
       class="event-swiper"
-      @swiper="onSwiper">
+      @swiper="onSwiperEvent">
       <z-swiper-item v-for="item in eventList" :key="item.startTimestamp" v-if="eventList.length > 0">
         <view
           class="event-box"
@@ -113,31 +113,25 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { useStore } from 'vuex';
 import { EffectCards } from '@/uni_modules/zebra-swiper/modules';
 
 const modules = ref([EffectCards]);
-
 const store = useStore();
-
+const recordList = computed(() => store.state.recordList);
 const eventList = ref([]);
 
-// onMounted(() => {
-//   const recordList = uni.getStorageSync('jarvis-record') || [];
-//   eventList.value = recordList.filter((item) => item.pointsData.Actions && item.pointsData.Keywords);
-//   console.log('事件列表===', eventList.value);
-// });
-
-const onSwiper = (swiper) => {
+const onSwiperEvent = (swiper) => {
   console.log('swiper实例:', swiper);
-  const recordList = uni.getStorageSync('jarvis-record') || [];
-  eventList.value = recordList.filter((item) => item.pointsData.Actions && item.pointsData.Keywords);
-  console.log('事件列表===', eventList.value);
+  console.log('录音列表', recordList.value);
+  if (recordList.value.length == 0) return;
+  eventList.value = recordList.value.filter((item) => item.pointsData.Actions && item.pointsData.Keywords);
+  console.log('事件列表', eventList.value);
 };
 
 const handleEvent = (item) => {
-  console.log('事件===', item);
+  console.log('事件', item);
   store.commit('setPopupEventData', item);
 };
 </script>

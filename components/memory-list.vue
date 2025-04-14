@@ -68,23 +68,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { formatDate } from '@/utils';
+import { useStore } from 'vuex';
 
+const store = useStore();
+const recordList = computed(() => store.state.recordList);
 const textLoading = ref(false);
-const recordList = ref([]);
 const dialogInfo = ref(null);
 const deleteDialog = ref(null);
-
-onMounted(() => {
-  recordList.value = uni.getStorageSync('jarvis-record') || [];
-  console.log('录音列表===', recordList.value);
-});
-
-const refresh = () => {
-  recordList.value = uni.getStorageSync('jarvis-record') || [];
-  console.log('录音列表===', recordList.value);
-};
 
 const handleDelete = (item) => {
   dialogInfo.value = item;
@@ -92,8 +84,8 @@ const handleDelete = (item) => {
 };
 
 const deleteDialogConfirm = () => {
-  recordList.value = recordList.value.filter((record) => record.startTimestamp !== dialogInfo.value.startTimestamp);
-  uni.setStorageSync('jarvis-record', recordList.value);
+  const recordArr = recordList.value.filter((record) => record.startTimestamp !== dialogInfo.value.startTimestamp);
+  store.commit('setRecordList', recordArr);
   deleteDialog.value.close();
 };
 
@@ -102,7 +94,6 @@ const deleteDialogClose = () => {
 };
 
 defineExpose({
-  textLoading,
-  refresh
+  textLoading
 });
 </script>
