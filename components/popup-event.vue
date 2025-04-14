@@ -7,11 +7,11 @@
           <image class="popup-title-img2" src="/static/images/popup-title-event.png" mode="widthFix" />
 
           <view class="event-content">
-            <view class="event-title">{{ popupEventData.pointsData.Keywords.join(' | ') }}</view>
+            <view class="event-title">{{ popupEventData.pointsData?.Keywords.join(' | ') }}</view>
             <view class="event-content-box">
               <view class="event-content-box-title">详情</view>
               <view>{{ popupEventData.startTimeText }}</view>
-              <view v-for="(text, index) in popupEventData.pointsData.Actions" :key="index">
+              <view v-for="(text, index) in popupEventData.pointsData?.Actions" :key="index">
                 {{ text.Text }}
               </view>
             </view>

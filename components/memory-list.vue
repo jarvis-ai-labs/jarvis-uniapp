@@ -128,7 +128,7 @@ const handleAgainTransferText = async (item) => {
     item.pointsData = pointsResult.MeetingAssistance;
     item.transcriptionData = transcriptionResult.Transcription;
 
-    if (item.pointsData.Actions && item.pointsData.Keywords) {
+    if (item.pointsData.Actions) {
       store.commit('setPopupEventData', item);
     }
 

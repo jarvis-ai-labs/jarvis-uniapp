@@ -272,7 +272,7 @@ const uploadTransfer = async (arrayBuffer, duration, mime) => {
     };
     console.log('录音信息', recordInfo);
 
-    if (recordInfo.pointsData.Actions && recordInfo.pointsData.Keywords) {
+    if (recordInfo.pointsData.Actions) {
       store.commit('setPopupEventData', recordInfo);
     }
 

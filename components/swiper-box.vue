@@ -13,10 +13,8 @@
           style="background: url('/static/images/bg-event-2.png') no-repeat center center; background-size: 100% 100%">
           <view class="box-content">
             <uni-icons type="checkbox" size="24" color="#ffffff" />
-            <view class="text">
-              <view v-for="(text, index) in item.pointsData.Actions" :key="index">
-                {{ text.Text }}
-              </view>
+            <view class="text" v-for="(text, index) in item.pointsData.Actions" :key="index">
+              {{ text.Text }}
             </view>
             <button class="event-btn" @click="handleEvent(item)">查看详情</button>
           </view>
@@ -113,7 +111,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useStore } from 'vuex';
 import { EffectCards } from '@/uni_modules/zebra-swiper/modules';
 
@@ -121,10 +119,20 @@ const modules = ref([EffectCards]);
 const store = useStore();
 const recordList = computed(() => store.state.recordList);
 const eventList = ref([]);
+const swiperEventInstance = ref(null);
+
+watch(recordList, (newVal) => {
+  console.log('更新事件', newVal);
+  swiperEventInstance.value.update();
+});
 
 const onSwiperEvent = (swiper) => {
+  console.log('swiper', swiper);
+  swiperEventInstance.value = swiper;
+
+  console.log('录音列表', recordList.value);
   if (recordList.value.length == 0) return;
-  eventList.value = recordList.value.filter((item) => item.pointsData.Actions && item.pointsData.Keywords);
+  eventList.value = recordList.value.filter((item) => item.pointsData.Actions);
   console.log('事件列表', eventList.value);
 };
 
