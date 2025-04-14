@@ -123,8 +123,6 @@ const recordList = computed(() => store.state.recordList);
 const eventList = ref([]);
 
 const onSwiperEvent = (swiper) => {
-  console.log('swiper实例:', swiper);
-  console.log('录音列表', recordList.value);
   if (recordList.value.length == 0) return;
   eventList.value = recordList.value.filter((item) => item.pointsData.Actions && item.pointsData.Keywords);
   console.log('事件列表', eventList.value);

@@ -1,6 +1,6 @@
 <template>
   <view class="text-list">
-    <view class="textlodingbox" v-if="textLoading"><i class="uni-toast__icon uni-loading"></i></view>
+    <view class="textlodingbox" v-if="transferTextLoading"><i class="uni-toast__icon uni-loading"></i></view>
     <view class="text-list-item" v-for="item in recordList" :key="item.startTimestamp" v-if="recordList.length > 0">
       <view class="text-item-box">
         <uni-swipe-action>
@@ -12,7 +12,7 @@
                 </div>
                 <view class="text-box">
                   <view class="title">
-                    {{ item.pointsData.Keywords.join(' | ') }}
+                    {{ item.pointsData?.Keywords.join(' | ') }}
                   </view>
                   <view class="content">
                     <!-- <uni-icons type="location" size="20" color="#979797" /> -->
@@ -20,7 +20,7 @@
                   </view>
                 </view>
               </div>
-              <button class="btn-text">Text</button>
+              <button class="btn-text" @click="handleAgainTransferText(item)">Text</button>
             </view>
             <template #right>
               <view class="more-button-box">
@@ -41,6 +41,10 @@
 
       <view class="text-item2">
         <scroll-view scroll-y="true" class="text-item2-list">
+          <view class="textlodingbox" v-if="againTransferTextLoading && againTransferTextId === item.startTimestamp">
+            <i class="uni-toast__icon uni-loading"></i>
+          </view>
+
           <view class="text-box" v-for="text in item.transcriptionData?.Paragraphs" :key="text.ParagraphId">
             <view class="title">
               <text>说话人{{ text.SpeakerId }}: </text>
@@ -71,12 +75,22 @@
 import { ref, onMounted, computed } from 'vue';
 import { formatDate } from '@/utils';
 import { useStore } from 'vuex';
+import {
+  uploadToOss,
+  generateOnlineUrl,
+  createKeyPointsTask,
+  getTaskResultUrl,
+  getTaskResult,
+  createTranscriptionTask
+} from '@/api/api';
 
 const store = useStore();
 const recordList = computed(() => store.state.recordList);
-const textLoading = ref(false);
+const transferTextLoading = computed(() => store.state.transferTextLoading);
 const dialogInfo = ref(null);
 const deleteDialog = ref(null);
+const againTransferTextLoading = ref(false);
+const againTransferTextId = ref(null);
 
 const handleDelete = (item) => {
   dialogInfo.value = item;
@@ -93,7 +107,37 @@ const deleteDialogClose = () => {
   deleteDialog.value.close();
 };
 
-defineExpose({
-  textLoading
-});
+const handleAgainTransferText = async (item) => {
+  if (againTransferTextLoading.value) return;
+  againTransferTextLoading.value = true;
+
+  try {
+    againTransferTextId.value = item.startTimestamp;
+    item.pointsData = null;
+    item.transcriptionData = null;
+
+    const pointsId = await createKeyPointsTask(item.onlineUrl);
+    const transcriptionId = await createTranscriptionTask(item.onlineUrl);
+
+    const pointsUrl = await getTaskResultUrl(pointsId, '要点提炼');
+    const transcriptionUrl = await getTaskResultUrl(transcriptionId, '转录');
+
+    const pointsResult = await getTaskResult(pointsUrl.MeetingAssistance);
+    const transcriptionResult = await getTaskResult(transcriptionUrl.Transcription);
+
+    item.pointsData = pointsResult.MeetingAssistance;
+    item.transcriptionData = transcriptionResult.Transcription;
+
+    if (item.pointsData.Actions && item.pointsData.Keywords) {
+      store.commit('setPopupEventData', item);
+    }
+
+    store.commit('setRecordList', [item, ...recordList.value]);
+  } catch (error) {
+    console.log('失败', error);
+  } finally {
+    againTransferTextLoading.value = false;
+    againTransferTextId.value = null;
+  }
+};
 </script>

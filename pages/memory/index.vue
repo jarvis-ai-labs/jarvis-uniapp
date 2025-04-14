@@ -4,7 +4,7 @@
   <scroll-view scroll-y="true" class="main">
     <swiper-box />
 
-    <memory-list ref="memoryListRef" />
+    <memory-list />
   </scroll-view>
 
   <view class="record-btn">
@@ -58,7 +58,7 @@ import { ref, getCurrentInstance, onMounted, onUnmounted, computed } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import {
   uploadToOss,
-  generateSignatureUrl,
+  generateOnlineUrl,
   createKeyPointsTask,
   getTaskResultUrl,
   getTaskResult,
@@ -69,13 +69,13 @@ import { useStore } from 'vuex';
 
 const store = useStore();
 const recordList = computed(() => store.state.recordList);
+const transferTextLoading = computed(() => store.state.transferTextLoading);
 const vue3This = getCurrentInstance().proxy;
 const isRecording = ref(false);
 const voiceWaveRef = ref(null);
 const recordDuration = ref('');
 const startTimestamp = Date.now();
 const fileName = formatFileName(startTimestamp);
-const memoryListRef = ref(null);
 
 onMounted(() => {
   vue3This.isMounted = true;
@@ -89,6 +89,8 @@ onShow(() => {
 });
 
 const recReq = () => {
+  if (transferTextLoading.value) return;
+
   RecordApp.UniNativeUtsPlugin = null;
 
   console.log('正在请求录音权限...');
@@ -187,7 +189,7 @@ const recStop = () => {
       console.log(
         '已录制[' +
           mime +
-          ']：' +
+          ']: ' +
           formatDuration(duration) +
           ' ' +
           arrayBuffer.byteLength +
@@ -199,7 +201,7 @@ const recStop = () => {
         2
       );
 
-      getTextResult(arrayBuffer, duration, mime);
+      uploadTransfer(arrayBuffer, duration, mime);
     },
     (msg) => {
       console.log('结束录音失败：' + msg, 1);
@@ -235,21 +237,18 @@ const getFilePath = (arrayBuffer) => {
   });
 };
 
-// 获取文字
-const getTextResult = async (arrayBuffer, duration, mime) => {
-  if (memoryListRef.value.textLoading) return;
-  memoryListRef.value.textLoading = true;
-
+const uploadTransfer = async (arrayBuffer, duration, mime) => {
+  if (transferTextLoading.value) return;
+  store.commit('setTransferTextLoading', true);
   try {
     const filePath = await getFilePath(arrayBuffer);
-    if (!filePath) return;
 
     const newFileName = await uploadToOss(fileName, filePath);
 
-    const signatureUrl = await generateSignatureUrl(newFileName);
+    const onlineUrl = await generateOnlineUrl(newFileName);
 
-    const pointsId = await createKeyPointsTask(signatureUrl);
-    const transcriptionId = await createTranscriptionTask(signatureUrl);
+    const pointsId = await createKeyPointsTask(onlineUrl);
+    const transcriptionId = await createTranscriptionTask(onlineUrl);
 
     const pointsUrl = await getTaskResultUrl(pointsId, '要点提炼');
     const transcriptionUrl = await getTaskResultUrl(transcriptionId, '转录');
@@ -260,13 +259,14 @@ const getTextResult = async (arrayBuffer, duration, mime) => {
     const recordInfo = {
       fileName,
       mime,
+      filePath,
+      onlineUrl,
       duration,
       durationText: formatDuration(duration),
       startTimestamp,
       startTimeText: formatDate(startTimestamp),
       arrayBuffer,
       size: arrayBuffer.byteLength,
-      filePath,
       pointsData: pointsResult.MeetingAssistance,
       transcriptionData: transcriptionResult.Transcription
     };
@@ -280,7 +280,7 @@ const getTextResult = async (arrayBuffer, duration, mime) => {
   } catch (error) {
     console.log('失败', error);
   } finally {
-    memoryListRef.value.textLoading = false;
+    store.commit('setTransferTextLoading', false);
   }
 };
 

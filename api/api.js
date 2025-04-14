@@ -147,7 +147,7 @@ export const uploadToOss = async (fileName, filePath) => {
 };
 
 /**生成在线链接 */
-export const generateSignatureUrl = async (fileName) => {
+export const generateOnlineUrl = async (fileName) => {
   try {
     const client = new OSS({
       accessKeyId: ACCESSKEYID,
