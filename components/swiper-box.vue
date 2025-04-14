@@ -1,7 +1,28 @@
 <template>
   <view class="swiper-box">
-    <z-swiper grabCursor effect="cards" :cardsEffect="{ rotate: false }" :modules="modules" class="event-swiper">
-      <z-swiper-item>
+    <z-swiper
+      grabCursor
+      effect="cards"
+      :cardsEffect="{ rotate: false }"
+      :modules="modules"
+      class="event-swiper"
+      @swiper="onSwiper">
+      <z-swiper-item v-for="item in eventList" :key="item.startTimestamp" v-if="eventList.length > 0">
+        <view
+          class="event-box"
+          style="background: url('/static/images/bg-event-2.png') no-repeat center center; background-size: 100% 100%">
+          <view class="box-content">
+            <uni-icons type="checkbox" size="24" color="#ffffff" />
+            <view class="text">
+              <view v-for="(text, index) in item.pointsData.Actions" :key="index">
+                {{ text.Text }}
+              </view>
+            </view>
+            <button class="event-btn" @click="handleEvent(item)">查看详情</button>
+          </view>
+        </view>
+      </z-swiper-item>
+      <z-swiper-item v-else>
         <view
           class="event-box"
           style="background: url('/static/images/bg-event-1.png') no-repeat center center; background-size: 100% 100%">
@@ -11,7 +32,7 @@
           </view>
         </view>
       </z-swiper-item>
-      <z-swiper-item>
+      <!-- <z-swiper-item>
         <view
           class="event-box"
           style="background: url('/static/images/bg-event-2.png') no-repeat center center; background-size: 100% 100%">
@@ -24,7 +45,7 @@
             <button class="event-btn">晚餐|18:00|国贸大厦</button>
           </view>
         </view>
-      </z-swiper-item>
+      </z-swiper-item> -->
     </z-swiper>
 
     <view class="schedule-document">
@@ -92,8 +113,31 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { useStore } from 'vuex';
 import { EffectCards } from '@/uni_modules/zebra-swiper/modules';
 
 const modules = ref([EffectCards]);
+
+const store = useStore();
+
+const eventList = ref([]);
+
+// onMounted(() => {
+//   const recordList = uni.getStorageSync('jarvis-record') || [];
+//   eventList.value = recordList.filter((item) => item.pointsData.Actions && item.pointsData.Keywords);
+//   console.log('事件列表===', eventList.value);
+// });
+
+const onSwiper = (swiper) => {
+  console.log('swiper实例:', swiper);
+  const recordList = uni.getStorageSync('jarvis-record') || [];
+  eventList.value = recordList.filter((item) => item.pointsData.Actions && item.pointsData.Keywords);
+  console.log('事件列表===', eventList.value);
+};
+
+const handleEvent = (item) => {
+  console.log('事件===', item);
+  store.commit('setPopupEventData', item);
+};
 </script>

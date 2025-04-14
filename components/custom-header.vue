@@ -33,9 +33,12 @@
       </view>
     </view>
   </view>
+  <popup-event />
 </template>
 
-<script setup></script>
+<script setup>
+import PopupEvent from '@/components/popup-event.vue';
+</script>
 
 <style lang="scss" scoped>
 .custom-header {

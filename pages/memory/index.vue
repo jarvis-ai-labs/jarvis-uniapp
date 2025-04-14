@@ -65,6 +65,9 @@ import {
   createTranscriptionTask
 } from '@/api/api';
 
+import { useStore } from 'vuex';
+
+const store = useStore();
 const vue3This = getCurrentInstance().proxy;
 const isRecording = ref(false);
 const voiceWaveRef = ref(null);
@@ -203,6 +206,34 @@ const recStop = () => {
   );
 };
 
+const getFilePath = (arrayBuffer) => {
+  return new Promise((resolve, reject) => {
+    RecordApp.UniSaveLocalFile(
+      fileName + '.mp3',
+      arrayBuffer,
+      (savePath) => {
+        console.log('UniSaveLocalFile:', savePath);
+        uni.saveFile({
+          tempFilePath: savePath,
+          success: (res) => {
+            const filePath = res.savedFilePath;
+            console.log('saveFile:', filePath);
+            resolve(filePath);
+          },
+          fail: (err) => {
+            console.error('保存录音失败:', err);
+            reject(err);
+          }
+        });
+      },
+      (errMsg) => {
+        console.error('保存录音失败:', errMsg);
+        reject(errMsg);
+      }
+    );
+  });
+};
+
 // 获取文字
 const getTextResult = async (arrayBuffer, duration, mime) => {
   if (memoryListRef.value.textLoading) return;
@@ -239,6 +270,11 @@ const getTextResult = async (arrayBuffer, duration, mime) => {
       transcriptionData: transcriptionResult.Transcription
     };
     console.log('录音信息', recordInfo);
+
+    if (recordInfo.pointsData.Actions && recordInfo.pointsData.Keywords) {
+      store.commit('setPopupEventData', recordInfo);
+    }
+
     let recordList = uni.getStorageSync('jarvis-record') || [];
     recordList.unshift(recordInfo);
     uni.setStorageSync('jarvis-record', recordList);
@@ -248,34 +284,6 @@ const getTextResult = async (arrayBuffer, duration, mime) => {
   } finally {
     memoryListRef.value.textLoading = false;
   }
-};
-
-const getFilePath = (arrayBuffer) => {
-  return new Promise((resolve, reject) => {
-    RecordApp.UniSaveLocalFile(
-      fileName + '.mp3',
-      arrayBuffer,
-      (savePath) => {
-        console.log('UniSaveLocalFile:', savePath);
-        uni.saveFile({
-          tempFilePath: savePath,
-          success: (res) => {
-            const filePath = res.savedFilePath;
-            console.log('saveFile:', filePath);
-            resolve(filePath);
-          },
-          fail: (err) => {
-            console.error('保存录音失败:', err);
-            reject(err);
-          }
-        });
-      },
-      (errMsg) => {
-        console.error('保存录音失败:', errMsg);
-        reject(errMsg);
-      }
-    );
-  });
 };
 
 const recPause = () => {
