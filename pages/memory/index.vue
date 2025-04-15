@@ -244,7 +244,7 @@ const recStop = () => {
         2
       );
 
-      // uploadTransfer(arrayBuffer, duration, mime);
+      uploadTransfer(arrayBuffer, duration, mime);
     },
     (msg) => {
       console.log('结束录音失败：' + msg, 1);
