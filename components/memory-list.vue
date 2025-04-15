@@ -108,8 +108,7 @@ const deleteDialogClose = () => {
 };
 
 const handleAgainTransferText = async (item) => {
-  console.log('againTransferTextLoading', againTransferTextLoading.value);
-  if (againTransferTextLoading.value) return;
+  if (transferTextLoading.value || againTransferTextLoading.value) return;
   store.commit('setAgainTransferTextLoading', true);
 
   try {

@@ -240,7 +240,7 @@ const getFilePath = (arrayBuffer) => {
 };
 
 const uploadTransfer = async (arrayBuffer, duration, mime) => {
-  if (transferTextLoading.value) return;
+  if (transferTextLoading.value || againTransferTextLoading.value) return;
   store.commit('setTransferTextLoading', true);
   try {
     const filePath = await getFilePath(arrayBuffer);
