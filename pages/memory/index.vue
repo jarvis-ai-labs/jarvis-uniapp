@@ -15,7 +15,9 @@
       <image src="/static/images/record-btn.png" mode="widthFix" v-else @click="recReq" />
     </view>
 
-    <voice-wave ref="voiceWaveRef" />
+    <view class="recwave" v-if="isRecording">
+      <canvas type="2d" class="recwave-Histogram2"></canvas>
+    </view>
   </view>
 
   <custom-tabbar />
@@ -24,7 +26,6 @@
 <script setup>
 import CustomTabbar from '@/components/custom-tabbar.vue';
 import CustomHeader from '@/components/custom-header.vue';
-import VoiceWave from '@/components/voice-wave.vue';
 import MemoryList from '@/components/memory-list.vue';
 import SwiperBox from '@/components/swiper-box.vue';
 
@@ -38,7 +39,8 @@ import 'recorder-core/src/engine/mp3.js';
 import 'recorder-core/src/engine/mp3-engine.js';
 
 //可选引入可视化插件
-import 'recorder-core/src/extensions/waveview.js';
+import 'recorder-core/src/extensions/frequency.histogram.view.js';
+import 'recorder-core/src/extensions/lib.fft.js';
 // #endif
 
 /** 引入RecordApp **/
@@ -73,11 +75,9 @@ const transferTextLoading = computed(() => store.state.transferTextLoading);
 const againTransferTextLoading = computed(() => store.state.againTransferTextLoading);
 const vue3This = getCurrentInstance().proxy;
 const isRecording = ref(false);
-const voiceWaveRef = ref(null);
 const recordDuration = ref('');
 const startTimestamp = Date.now();
 const fileName = formatFileName(startTimestamp);
-console.log('fileName', fileName);
 
 onMounted(() => {
   vue3This.isMounted = true;
@@ -108,7 +108,7 @@ const recReq = () => {
       if (isUserNotAllow) {
         openPermissionSetting();
       }
-      console.log((isUserNotAllow ? 'isUserNotAllow,' : '') + '请求录音权限失败：' + msg, 1);
+      console.log((isUserNotAllow ? 'isUserNotAllow,' : '') + '请求录音权限失败：' + msg);
     }
   );
 };
@@ -137,53 +137,94 @@ const recStart = () => {
   console.log('正在打开...');
   RecordApp.UniWebViewActivate(vue3This);
 
-  voiceWaveRef.value.init();
   isRecording.value = true;
 
-  RecordApp.Start({
-    type: 'mp3',
-    sampleRate: 16000,
-    bitRate: 16,
-    audioTrackSet: {
-      noiseSuppression: true,
-      echoCancellation: true,
-      autoGainControl: true
-    },
-    onProcess: (buffers, powerLevel, duration, sampleRate, newBufferIdx, asyncEnd) => {
-      recordDuration.value = formatDuration(duration);
-      voiceWaveRef.value.input(buffers[buffers.length - 1], powerLevel, sampleRate);
-    },
-    onProcess_renderjs: `function(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd){
-        //App中在这里修改buffers才会改变生成的音频文件
-        //App中是在renderjs中进行的可视化图形绘制，因此需要写在这里，this是renderjs模块的this（也可以用This变量）；如果代码比较复杂，请直接在renderjs的methods里面放个方法xxxFunc，这里直接使用this.xxxFunc(args)进行调用
+  RecordApp.Start(
+    {
+      type: 'mp3',
+      sampleRate: 16000,
+      bitRate: 16,
+      audioTrackSet: {
+        noiseSuppression: true,
+        echoCancellation: true,
+        autoGainControl: true
+      },
+      onProcess: (buffers, powerLevel, duration, sampleRate, newBufferIdx, asyncEnd) => {
+        recordDuration.value = formatDuration(duration);
+
+        //H5、小程序等可视化图形绘制，直接运行在逻辑层；App里面需要在onProcess_renderjs中进行这些操作
+        // #ifdef H5 || MP-WEIXIN
+        const wave = vue3This.waveStore && vue3This.waveStore[vue3This.recwaveChoiceKey];
+        if (wave) {
+          wave.input(buffers[buffers.length - 1], powerLevel, sampleRate);
+        }
+        // #endif
+      },
+      onProcess_renderjs: `function(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd){
+        const wave=this.waveStore&&this.waveStore[this.recwaveChoiceKey];
+        if(wave) wave.input(buffers[buffers.length-1],powerLevel,sampleRate);
       }`,
-    takeoffEncodeChunk: !vue3This.takeoffEncodeChunkSet
-      ? null
-      : (chunkBytes) => {
-          //全平台通用：实时接收到编码器编码出来的音频片段数据，chunkBytes是Uint8Array二进制数据，可以实时上传（发送）出去
-          //App中如果未配置RecordApp.UniWithoutAppRenderjs时，建议提供此回调，因为录音结束后会将整个录音文件从renderjs传回逻辑层，由于uni-app的逻辑层和renderjs层数据交互性能实在太拉跨了，大点的文件传输会比较慢，提供此回调后可避免Stop时产生超大数据回传
-        },
-    takeoffEncodeChunk_renderjs: !vue3This.takeoffEncodeChunkSet
-      ? null
-      : `function(chunkBytes){
+      takeoffEncodeChunk: !vue3This.takeoffEncodeChunkSet
+        ? null
+        : (chunkBytes) => {
+            //全平台通用：实时接收到编码器编码出来的音频片段数据，chunkBytes是Uint8Array二进制数据，可以实时上传（发送）出去
+            //App中如果未配置RecordApp.UniWithoutAppRenderjs时，建议提供此回调，因为录音结束后会将整个录音文件从renderjs传回逻辑层，由于uni-app的逻辑层和renderjs层数据交互性能实在太拉跨了，大点的文件传输会比较慢，提供此回调后可避免Stop时产生超大数据回传
+          },
+      takeoffEncodeChunk_renderjs: !vue3This.takeoffEncodeChunkSet
+        ? null
+        : `function(chunkBytes){
         //App中这里可以做一些仅在renderjs中才生效的事情，不提供也行，this是renderjs模块的this（也可以用This变量）
       }`,
 
-    start_renderjs: `function(){
+      start_renderjs: `function(){
         //App中可以放一个函数，在Start成功时renderjs中会先调用这里的代码，this是renderjs模块的this（也可以用This变量）
         //放一些仅在renderjs中才生效的事情，比如初始化，不提供也行
       }`,
-    stop_renderjs: `function(aBuf,duration,mime){
+      stop_renderjs: `function(aBuf,duration,mime){
         //App中可以放一个函数，在Stop成功时renderjs中会先调用这里的代码，this是renderjs模块的this（也可以用This变量）
         this.audioData=aBuf; //留着给Stop时进行转码成wav播放
       }`
-  });
+    },
+    () => {
+      console.log('录制中 mp3');
+
+      //创建音频可视化图形绘制
+      RecordApp.UniFindCanvas(
+        vue3This,
+        ['.recwave-Histogram2'],
+        `const store=this.waveStore=this.waveStore||{};
+        this.recwaveChoiceKey="Histogram2";
+        store.Histogram2=Recorder.FrequencyHistogramView({compatibleCanvas:canvas1, width:300, height:100
+          ,lineCount:200,widthRatio:1,position:0,minHeight:1
+          ,fallDuration:600,stripeEnable:false,mirrorEnable:true,linear:[0,"#815EF6",1,"#815EF6"]});`,
+        (canvas1) => {
+          vue3This.waveStore = vue3This.waveStore || {};
+          vue3This.recwaveChoiceKey = 'Histogram2';
+          vue3This.waveStore.Histogram2 = Recorder.FrequencyHistogramView({
+            compatibleCanvas: canvas1,
+            width: 300,
+            height: 100,
+            lineCount: 200,
+            widthRatio: 1,
+            position: 0,
+            minHeight: 1,
+            fallDuration: 600,
+            stripeEnable: false,
+            mirrorEnable: true,
+            linear: [0, '#815EF6', 1, '#815EF6']
+          });
+        }
+      );
+    },
+    (msg) => {
+      console.log('开始录音失败：' + msg);
+    }
+  );
 };
 
 const recStop = () => {
   console.log('正在结束录音...');
   isRecording.value = false;
-  voiceWaveRef.value.clear();
 
   RecordApp.Stop(
     async (arrayBuffer, duration, mime) => {
@@ -203,7 +244,7 @@ const recStop = () => {
         2
       );
 
-      uploadTransfer(arrayBuffer, duration, mime);
+      // uploadTransfer(arrayBuffer, duration, mime);
     },
     (msg) => {
       console.log('结束录音失败：' + msg, 1);
@@ -357,10 +398,12 @@ import RecordApp from 'recorder-core/src/app-support/app'
 import '../../uni_modules/Recorder-UniCore/app-uni-support.js' //renderjs中似乎不支持"@/"打头的路径，如果编译路径错误请改正路径即可
 
 //按需引入你需要的录音格式支持文件，和插件
-import 'recorder-core/src/engine/mp3'
-import 'recorder-core/src/engine/mp3-engine'
+import 'recorder-core/src/engine/mp3.js'
+import 'recorder-core/src/engine/mp3-engine.js'
 
-import 'recorder-core/src/extensions/waveview'
+//可选引入可视化插件
+import 'recorder-core/src/extensions/frequency.histogram.view.js'
+import 'recorder-core/src/extensions/lib.fft.js'
 
 export default {
   data() {
@@ -378,3 +421,19 @@ export default {
 }
 </script>
 <!-- #endif -->
+
+<style>
+.recwave {
+  width: 300px;
+  height: 100px;
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+.recwave canvas {
+  width: 300px;
+  height: 100px;
+}
+</style>

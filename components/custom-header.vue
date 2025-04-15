@@ -1,8 +1,8 @@
 <!-- 自定义头部 -->
 <template>
   <view class="custom-header">
-    <uni-icons type="list" size="24" color="#ffffff" />
     <view class="header-content">
+      <!-- <uni-icons type="list" size="24" color="#ffffff" /> -->
       <text class="header-title">Hi Jarvis</text>
       <view class="header-right">
         <image class="avatar" src="/static/images/jarvis-avatar.png" mode="widthFix" />
@@ -47,9 +47,15 @@ import PopupEvent from '@/components/popup-event.vue';
   padding: 30px;
   background: url('/static/images/bg-header.png') no-repeat left center;
   background-size: auto 120%;
+  position: relative;
+  .uni-icons.uniui-list {
+    position: absolute;
+    top: 35px;
+    left: 30px;
+  }
   .header-content {
     width: 100%;
-    height: calc(100% - 24px);
+    height: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
