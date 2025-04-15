@@ -12,7 +12,7 @@
                 </div>
                 <view class="text-box">
                   <view class="title">
-                    {{ item.pointsData?.Keywords.join(' | ') }}
+                    {{ item.pointsData?.Keywords.length > 0 ? item.pointsData?.Keywords.join(' | ') : item.fileName }}
                   </view>
                   <view class="content">
                     <!-- <uni-icons type="location" size="20" color="#979797" /> -->
@@ -87,9 +87,9 @@ import {
 const store = useStore();
 const recordList = computed(() => store.state.recordList);
 const transferTextLoading = computed(() => store.state.transferTextLoading);
+const againTransferTextLoading = computed(() => store.state.againTransferTextLoading);
 const dialogInfo = ref(null);
 const deleteDialog = ref(null);
-const againTransferTextLoading = ref(false);
 const againTransferTextId = ref(null);
 
 const handleDelete = (item) => {
@@ -108,8 +108,9 @@ const deleteDialogClose = () => {
 };
 
 const handleAgainTransferText = async (item) => {
+  console.log('againTransferTextLoading', againTransferTextLoading.value);
   if (againTransferTextLoading.value) return;
-  againTransferTextLoading.value = true;
+  store.commit('setAgainTransferTextLoading', true);
 
   try {
     againTransferTextId.value = item.startTimestamp;
@@ -125,18 +126,28 @@ const handleAgainTransferText = async (item) => {
     const pointsResult = await getTaskResult(pointsUrl.MeetingAssistance);
     const transcriptionResult = await getTaskResult(transcriptionUrl.Transcription);
 
-    item.pointsData = pointsResult.MeetingAssistance;
-    item.transcriptionData = transcriptionResult.Transcription;
+    const newRecordList = recordList.value.map((record) => {
+      if (record.startTimestamp === item.startTimestamp) {
+        const newRecord = {
+          ...record,
+          pointsData: pointsResult.MeetingAssistance,
+          transcriptionData: transcriptionResult.Transcription
+        };
 
-    if (item.pointsData.Actions) {
-      store.commit('setPopupEventData', item);
-    }
+        if (newRecord.pointsData.Actions) {
+          store.commit('setPopupEventData', newRecord);
+        }
 
-    store.commit('setRecordList', [item, ...recordList.value]);
+        return newRecord;
+      }
+      return record;
+    });
+
+    store.commit('setRecordList', newRecordList);
   } catch (error) {
     console.log('失败', error);
   } finally {
-    againTransferTextLoading.value = false;
+    store.commit('setAgainTransferTextLoading', true);
     againTransferTextId.value = null;
   }
 };

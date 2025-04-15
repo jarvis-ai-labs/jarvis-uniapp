@@ -4,7 +4,8 @@ const store = createStore({
   state: {
     recordList: uni.getStorageSync('jarvis-record') || [],
     popupEventData: null,
-    transferTextLoading: false
+    transferTextLoading: false,
+    againTransferTextLoading: false
   },
   mutations: {
     setRecordList(state, data) {
@@ -16,6 +17,9 @@ const store = createStore({
     },
     setTransferTextLoading(state, data) {
       state.transferTextLoading = data;
+    },
+    setAgainTransferTextLoading(state, data) {
+      state.againTransferTextLoading = data;
     }
   }
 });

@@ -70,6 +70,7 @@ import { useStore } from 'vuex';
 const store = useStore();
 const recordList = computed(() => store.state.recordList);
 const transferTextLoading = computed(() => store.state.transferTextLoading);
+const againTransferTextLoading = computed(() => store.state.againTransferTextLoading);
 const vue3This = getCurrentInstance().proxy;
 const isRecording = ref(false);
 const voiceWaveRef = ref(null);
@@ -90,7 +91,7 @@ onShow(() => {
 });
 
 const recReq = () => {
-  if (transferTextLoading.value) return;
+  if (transferTextLoading.value || againTransferTextLoading.value) return;
 
   RecordApp.UniNativeUtsPlugin = null;
 

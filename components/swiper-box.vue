@@ -11,7 +11,7 @@
       <z-swiper-item v-for="(event, eventIndex) in eventList1" :key="eventIndex" v-if="eventList1.length > 0">
         <view class="event-box" style="background: url('/static/images/bg-event.png') no-repeat center center">
           <uni-icons type="checkbox" size="24" color="#ffffff" />
-          <view class="text" v-for="(text, textIndex) in event.pointsData.Actions" :key="textIndex">
+          <view class="text" v-for="(text, textIndex) in event.pointsData?.Actions" :key="textIndex">
             {{ text.Text }}
           </view>
           <button class="event-btn" @click="handleEvent(event)">查看详情</button>
@@ -37,7 +37,7 @@
         <z-swiper-item v-for="(event, eventIndex) in eventList2" :key="eventIndex" v-if="eventList2.length > 0">
           <view class="event-box" style="background: url('/static/images/bg-event-2.png') no-repeat center center">
             <text class="iconfont">&#xe61e;</text>
-            <view class="text" v-for="(text, textIndex) in event.pointsData.Actions" :key="textIndex">
+            <view class="text" v-for="(text, textIndex) in event.pointsData?.Actions" :key="textIndex">
               {{ text.Text }}
             </view>
           </view>
@@ -61,7 +61,7 @@
         <z-swiper-item v-for="(event, eventIndex) in eventList3" :key="eventIndex" v-if="eventList3.length > 0">
           <view class="event-box" style="background: url('/static/images/bg-event-3.png') no-repeat center center">
             <text class="iconfont">&#xe613;</text>
-            <view class="text" v-for="(text, textIndex) in event.pointsData.Actions" :key="textIndex">
+            <view class="text" v-for="(text, textIndex) in event.pointsData?.Actions" :key="textIndex">
               {{ text.Text }}
             </view>
           </view>

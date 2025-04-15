@@ -7,7 +7,13 @@
           <image class="popup-title-img2" src="/static/images/popup-title-event.png" mode="widthFix" />
 
           <view class="event-content">
-            <view class="event-title">{{ popupEventData.pointsData?.Keywords.join(' | ') }}</view>
+            <view class="event-title">
+              {{
+                popupEventData.pointsData?.Keywords.length > 0
+                  ? popupEventData.pointsData?.Keywords.join(' | ')
+                  : popupEventData.fileName
+              }}
+            </view>
             <view class="event-content-box">
               <view class="event-content-box-title">详情</view>
               <view>{{ popupEventData.startTimeText }}</view>

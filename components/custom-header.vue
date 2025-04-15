@@ -5,7 +5,7 @@
     <view class="header-content">
       <text class="header-title">Hi Jarvis</text>
       <view class="header-right">
-        <image class="avatar" src="/static/images/avatar.png" mode="widthFix" />
+        <image class="avatar" src="/static/images/jarvis-avatar.png" mode="widthFix" />
         <view class="header-right-item">
           <view class="header-right-item-text">
             <image src="/static/images/icon-lv.png" />
