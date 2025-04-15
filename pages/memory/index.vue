@@ -76,6 +76,7 @@ const voiceWaveRef = ref(null);
 const recordDuration = ref('');
 const startTimestamp = Date.now();
 const fileName = formatFileName(startTimestamp);
+console.log('fileName', fileName);
 
 onMounted(() => {
   vue3This.isMounted = true;

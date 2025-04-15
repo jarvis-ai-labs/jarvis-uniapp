@@ -94,15 +94,20 @@ const eventList2 = ref([]);
 const eventList3 = ref([]);
 
 watch(recordList, (newVal) => {
-  console.log('监听recordList', newVal.length, newVal);
+  console.log('监听录音列表', newVal.length, newVal);
   updateEventLists();
 });
 
 const updateEventLists = () => {
   if (!swiperEventInstance.value || !swiperEventInstance2.value || !swiperEventInstance3.value) return;
 
+  console.log('录音列表', recordList.value.length, recordList.value);
+
   const newEventList = recordList.value.filter((item) => item.pointsData.Actions);
   oldEventList.value = newEventList.sort((a, b) => a.startTimestamp - b.startTimestamp);
+
+  console.log('事件列表', oldEventList.value.length, oldEventList.value);
+
   const length = oldEventList.value.length;
 
   // 根据数据长度设置不同的显示策略
@@ -113,8 +118,8 @@ const updateEventLists = () => {
     eventList3.value = oldEventList.value.slice(2);
   } else if (length === 2) {
     // 当数据为2条时，只显示前两个轮播器
-    eventList1.value = oldEventList.value;
-    eventList2.value = oldEventList.value.slice(0, -1);
+    eventList1.value = oldEventList.value.slice(0, -1);
+    eventList2.value = oldEventList.value.slice(1);
     eventList3.value = [];
   } else if (length === 1) {
     // 当数据为1条时，只显示第一个轮播器
@@ -138,7 +143,6 @@ const updateEventLists = () => {
 };
 
 const onSwiperEvent = (swiper) => {
-  console.log('onSwiperEvent', swiper);
   swiperEventInstance.value = swiper;
   updateEventLists();
 };

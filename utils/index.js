@@ -48,8 +48,9 @@ export function formatFileName(timestamp) {
   const hour = String(date.getHours()).padStart(2, '0');
   const minute = String(date.getMinutes()).padStart(2, '0');
   const second = String(date.getSeconds()).padStart(2, '0');
+  const millisecond = String(date.getMilliseconds()).padStart(3, '0');
 
-  return `Jarvis-录音-${year}年${month}月${day}日${hour}时${minute}分${second}秒`;
+  return `Jarvis-Recording-${year}Y${month}M${day}D-${hour}h${minute}m${second}s${millisecond}ms`;
 }
 
 export function formatFileSize(bytes) {
