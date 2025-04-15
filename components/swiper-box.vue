@@ -1,108 +1,75 @@
 <template>
   <view class="swiper-box">
     <z-swiper
+      class="event-swiper"
       grabCursor
       effect="cards"
-      :cardsEffect="{ rotate: false }"
+      :cardsEffect="{ rotate: false, slideShadows: false }"
       :modules="modules"
-      class="event-swiper"
-      @swiper="onSwiperEvent">
-      <z-swiper-item v-for="item in eventList" :key="item.startTimestamp" v-if="eventList.length > 0">
-        <view
-          class="event-box"
-          style="background: url('/static/images/bg-event-2.png') no-repeat center center; background-size: 100% 100%">
-          <view class="box-content">
-            <uni-icons type="checkbox" size="24" color="#ffffff" />
-            <view class="text" v-for="(text, index) in item.pointsData.Actions" :key="index">
-              {{ text.Text }}
-            </view>
-            <button class="event-btn" @click="handleEvent(item)">查看详情</button>
+      @swiper="onSwiperEvent"
+      @slideChange="onSlideChange">
+      <z-swiper-item v-for="(event, eventIndex) in eventList1" :key="eventIndex" v-if="eventList1.length > 0">
+        <view class="event-box" style="background: url('/static/images/bg-event.png') no-repeat center center">
+          <uni-icons type="checkbox" size="24" color="#ffffff" />
+          <view class="text" v-for="(text, textIndex) in event.pointsData.Actions" :key="textIndex">
+            {{ text.Text }}
           </view>
+          <button class="event-btn" @click="handleEvent(event)">查看详情</button>
         </view>
       </z-swiper-item>
       <z-swiper-item v-else>
-        <view
-          class="event-box"
-          style="background: url('/static/images/bg-event-1.png') no-repeat center center; background-size: 100% 100%">
-          <view class="box-content">
-            <uni-icons type="checkbox" size="24" color="#ffffff" />
-            <button class="event-btn">Event</button>
-          </view>
+        <view class="event-box">
+          <uni-icons type="checkbox" size="24" color="#ffffff" />
+          <button class="event-btn">Event</button>
         </view>
       </z-swiper-item>
-      <!-- <z-swiper-item>
-        <view
-          class="event-box"
-          style="background: url('/static/images/bg-event-2.png') no-repeat center center; background-size: 100% 100%">
-          <view class="box-content active">
-            <uni-icons type="checkbox" size="24" color="#ffffff" />
-            <view class="text"><text>行程详情</text></view>
-            <view class="text"><text>出发时间</text> <text>17:20</text></view>
-            <view class="text"><text>路线</text> <text>驾车路线(预计20分钟，途径东三环)</text></view>
-            <view class="text"><text>提醒</text> <text>提前10分钟通知</text></view>
-            <button class="event-btn">晚餐|18:00|国贸大厦</button>
-          </view>
-        </view>
-      </z-swiper-item> -->
     </z-swiper>
 
     <view class="schedule-document">
-      <z-swiper grabCursor effect="cards" :cardsEffect="{ rotate: false }" :modules="modules" class="schedule-swiper">
-        <z-swiper-item>
-          <view
-            class="schedule-box"
-            style="
-              background: url('/static/images/bg-schedule-1.png') no-repeat center center;
-              background-size: 100% 100%;
-            ">
-            <view class="box-content">
-              <text class="iconfont">&#xe61e;</text>
-              <text class="box-title">Schedule</text>
+      <z-swiper
+        class="event-swiper2"
+        grabCursor
+        effect="cards"
+        :cardsEffect="{ rotate: false, slideShadows: false }"
+        :modules="modules"
+        @swiper="onSwiperEvent2"
+        @slideChange="onSlideChange2">
+        <z-swiper-item v-for="(event, eventIndex) in eventList2" :key="eventIndex" v-if="eventList2.length > 0">
+          <view class="event-box" style="background: url('/static/images/bg-event-2.png') no-repeat center center">
+            <text class="iconfont">&#xe61e;</text>
+            <view class="text" v-for="(text, textIndex) in event.pointsData.Actions" :key="textIndex">
+              {{ text.Text }}
             </view>
           </view>
         </z-swiper-item>
-        <z-swiper-item>
-          <view
-            class="schedule-box"
-            style="
-              background: url('/static/images/bg-schedule-2.png') no-repeat center center;
-              background-size: 100% 100%;
-            ">
-            <view class="box-content active">
-              <text class="iconfont">&#xe61e;</text>
-              <view class="text"><text>与技术部门探讨app 接入硬件需求</text></view>
-              <view class="text text2"><text>提醒</text><text>提前5分钟通知</text></view>
-              <view class="text"><text>会议 | 15:00 | 上海</text></view>
-            </view>
+        <z-swiper-item v-else>
+          <view class="event-box">
+            <text class="iconfont">&#xe61e;</text>
+            <view class="text">Schedule</view>
           </view>
         </z-swiper-item>
       </z-swiper>
 
-      <z-swiper grabCursor effect="cards" :cardsEffect="{ rotate: false }" :modules="modules" class="document-swiper">
-        <z-swiper-item>
-          <view
-            class="document-box"
-            style="
-              background: url('/static/images/bg-document-1.png') no-repeat center center;
-              background-size: 100% 100%;
-            ">
-            <view class="box-content">
-              <text class="iconfont">&#xe613;</text>
-              <text class="box-title">News</text>
+      <z-swiper
+        class="event-swiper3"
+        grabCursor
+        effect="cards"
+        :cardsEffect="{ rotate: false, slideShadows: false }"
+        :modules="modules"
+        @swiper="onSwiperEvent3"
+        @slideChange="onSlideChange3">
+        <z-swiper-item v-for="(event, eventIndex) in eventList3" :key="eventIndex" v-if="eventList3.length > 0">
+          <view class="event-box" style="background: url('/static/images/bg-event-3.png') no-repeat center center">
+            <text class="iconfont">&#xe613;</text>
+            <view class="text" v-for="(text, textIndex) in event.pointsData.Actions" :key="textIndex">
+              {{ text.Text }}
             </view>
           </view>
         </z-swiper-item>
-        <z-swiper-item>
-          <view
-            class="document-box"
-            style="
-              background: url('/static/images/bg-document-2.png') no-repeat center center;
-              background-size: 100% 100%;
-            ">
-            <view class="box-content active">
-              <text class="iconfont">&#xe613;</text>
-              <view class="text"><text>JARVIS正在进行对市面智能穿戴分析， 生成了报告文档。</text></view>
-            </view>
+        <z-swiper-item v-else>
+          <view class="event-box">
+            <text class="iconfont">&#xe613;</text>
+            <view class="text">News</view>
           </view>
         </z-swiper-item>
       </z-swiper>
@@ -118,26 +85,96 @@ import { EffectCards } from '@/uni_modules/zebra-swiper/modules';
 const modules = ref([EffectCards]);
 const store = useStore();
 const recordList = computed(() => store.state.recordList);
-const eventList = ref([]);
 const swiperEventInstance = ref(null);
+const swiperEventInstance2 = ref(null);
+const swiperEventInstance3 = ref(null);
+const oldEventList = ref([]);
+const eventList1 = ref([]);
+const eventList2 = ref([]);
+const eventList3 = ref([]);
 
 watch(recordList, (newVal) => {
-  console.log('更新事件', newVal);
-  swiperEventInstance.value.update();
+  console.log('监听recordList', newVal.length, newVal);
+  updateEventLists();
 });
 
-const onSwiperEvent = (swiper) => {
-  console.log('swiper', swiper);
-  swiperEventInstance.value = swiper;
+const updateEventLists = () => {
+  if (!swiperEventInstance.value || !swiperEventInstance2.value || !swiperEventInstance3.value) return;
 
-  console.log('录音列表', recordList.value);
-  if (recordList.value.length == 0) return;
-  eventList.value = recordList.value.filter((item) => item.pointsData.Actions);
-  console.log('事件列表', eventList.value);
+  const newEventList = recordList.value.filter((item) => item.pointsData.Actions);
+  oldEventList.value = newEventList.sort((a, b) => a.startTimestamp - b.startTimestamp);
+  const length = oldEventList.value.length;
+
+  // 根据数据长度设置不同的显示策略
+  if (length >= 3) {
+    // 当数据大于等于3条时，三个轮播器都显示数据
+    eventList1.value = oldEventList.value.slice(0, -2);
+    eventList2.value = oldEventList.value.slice(1, -1);
+    eventList3.value = oldEventList.value.slice(2);
+  } else if (length === 2) {
+    // 当数据为2条时，只显示前两个轮播器
+    eventList1.value = oldEventList.value;
+    eventList2.value = oldEventList.value.slice(0, -1);
+    eventList3.value = [];
+  } else if (length === 1) {
+    // 当数据为1条时，只显示第一个轮播器
+    eventList1.value = oldEventList.value;
+    eventList2.value = [];
+    eventList3.value = [];
+  } else {
+    // 没有数据时清空所有轮播器
+    eventList1.value = [];
+    eventList2.value = [];
+    eventList3.value = [];
+  }
+
+  // 更新轮播器实例
+  [swiperEventInstance, swiperEventInstance2, swiperEventInstance3].forEach((instance) => {
+    if (instance.value) {
+      instance.value.updateSlides();
+      instance.value.update();
+    }
+  });
+};
+
+const onSwiperEvent = (swiper) => {
+  console.log('onSwiperEvent', swiper);
+  swiperEventInstance.value = swiper;
+  updateEventLists();
+};
+
+const onSwiperEvent2 = (swiper) => {
+  swiperEventInstance2.value = swiper;
+  updateEventLists();
+};
+
+const onSwiperEvent3 = (swiper) => {
+  swiperEventInstance3.value = swiper;
+  updateEventLists();
+};
+
+const onSlideChange = (swiper) => {
+  if (swiperEventInstance2.value && swiperEventInstance3.value) {
+    swiperEventInstance2.value.slideTo(swiper.activeIndex);
+    swiperEventInstance3.value.slideTo(swiper.activeIndex);
+  }
+};
+
+const onSlideChange2 = (swiper) => {
+  if (swiperEventInstance.value && swiperEventInstance3.value) {
+    swiperEventInstance.value.slideTo(swiper.activeIndex);
+    swiperEventInstance3.value.slideTo(swiper.activeIndex);
+  }
+};
+
+const onSlideChange3 = (swiper) => {
+  if (swiperEventInstance.value && swiperEventInstance2.value) {
+    swiperEventInstance.value.slideTo(swiper.activeIndex);
+    swiperEventInstance2.value.slideTo(swiper.activeIndex);
+  }
 };
 
 const handleEvent = (item) => {
-  console.log('事件', item);
   store.commit('setPopupEventData', item);
 };
 </script>
