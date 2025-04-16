@@ -11,9 +11,12 @@
       <z-swiper-item v-for="(event, eventIndex) in eventList1" :key="eventIndex" v-if="eventList1.length > 0">
         <view class="event-box" style="background: url('/static/images/bg-event.png') no-repeat center center">
           <uni-icons type="checkbox" size="24" color="#ffffff" />
-          <view class="text" v-for="(text, textIndex) in event.pointsData?.Actions" :key="textIndex">
-            {{ text.Text }}
+
+          <view class="text">
+            {{ getText(event.pointsData?.Actions[0].Text) }}
           </view>
+          <view class="text" v-if="event.pointsData?.Actions.length > 1">...</view>
+
           <button class="event-btn" @click="handleEvent(event)">查看详情</button>
         </view>
       </z-swiper-item>
@@ -35,11 +38,16 @@
         @swiper="onSwiperEvent2"
         @slideChange="onSlideChange2">
         <z-swiper-item v-for="(event, eventIndex) in eventList2" :key="eventIndex" v-if="eventList2.length > 0">
-          <view class="event-box" style="background: url('/static/images/bg-event-2.png') no-repeat center center">
+          <view
+            class="event-box"
+            style="background: url('/static/images/bg-event-2.png') no-repeat center center"
+            @click="handleEvent(event)">
             <text class="iconfont">&#xe61e;</text>
-            <view class="text" v-for="(text, textIndex) in event.pointsData?.Actions" :key="textIndex">
-              {{ text.Text }}
+
+            <view class="text">
+              {{ getText(event.pointsData?.Actions[0].Text) }}
             </view>
+            <view class="text" v-if="event.pointsData?.Actions.length > 1">...</view>
           </view>
         </z-swiper-item>
         <z-swiper-item v-else>
@@ -58,12 +66,18 @@
         :modules="modules"
         @swiper="onSwiperEvent3"
         @slideChange="onSlideChange3">
-        <z-swiper-item v-for="(event, eventIndex) in eventList3" :key="eventIndex" v-if="eventList3.length > 0">
+        <z-swiper-item
+          v-for="(event, eventIndex) in eventList3"
+          :key="eventIndex"
+          v-if="eventList3.length > 0"
+          @click="handleEvent(event)">
           <view class="event-box" style="background: url('/static/images/bg-event-3.png') no-repeat center center">
             <text class="iconfont">&#xe613;</text>
-            <view class="text" v-for="(text, textIndex) in event.pointsData?.Actions" :key="textIndex">
-              {{ text.Text }}
+
+            <view class="text">
+              {{ getText(event.pointsData?.Actions[0].Text) }}
             </view>
+            <view class="text" v-if="event.pointsData?.Actions.length > 1">...</view>
           </view>
         </z-swiper-item>
         <z-swiper-item v-else>
@@ -180,5 +194,9 @@ const onSlideChange3 = (swiper) => {
 
 const handleEvent = (item) => {
   store.commit('setPopupEventData', item);
+};
+
+const getText = (text) => {
+  return text.length > 20 ? text.slice(0, 20) + '...' : text;
 };
 </script>
