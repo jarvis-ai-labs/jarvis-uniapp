@@ -75,8 +75,8 @@ import {
   uploadToOss,
   generateOnlineUrl,
   createKeyPointsTask,
-  getTaskResultUrl,
   getTaskResult,
+  getTaskResultData,
   createTranscriptionTask
 } from '@/api/api';
 
@@ -117,31 +117,46 @@ const deleteDialogClose = () => {
   deleteDialog.value.close();
 };
 
+const transferText = async (newFileName) => {
+  // uni.showToast({ title: '开始转写录音文件...', icon: 'none', mask: true });
+
+  try {
+    const onlineUrl = await generateOnlineUrl(newFileName);
+
+    const transcriptionId = await createTranscriptionTask(onlineUrl);
+    const pointsId = await createKeyPointsTask(onlineUrl);
+
+    const transcriptionResult = await getTaskResult(transcriptionId, '转录');
+    const pointsResult = await getTaskResult(pointsId, '要点提炼');
+
+    const transcriptionData = await getTaskResultData(transcriptionResult.Transcription, '转录');
+    const pointsData = await getTaskResultData(pointsResult.MeetingAssistance, '要点提炼');
+
+    return {
+      transcriptionData: transcriptionData.Transcription,
+      pointsData: pointsData.MeetingAssistance
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
 const handleAgainTransferText = async (item) => {
   if (transferTextLoading.value || againTransferTextLoading.value) return;
   store.commit('setAgainTransferTextLoading', true);
+  uni.showToast({ title: '开始重新转写录音文件...', icon: 'none', mask: true });
 
   try {
     againTransferTextId.value = item.startTimestamp;
     item.pointsData = null;
     item.transcriptionData = null;
 
-    const pointsId = await createKeyPointsTask(item.onlineUrl);
-    const transcriptionId = await createTranscriptionTask(item.onlineUrl);
-
-    const pointsUrl = await getTaskResultUrl(pointsId, '要点提炼');
-    const transcriptionUrl = await getTaskResultUrl(transcriptionId, '转录');
-
-    const pointsResult = await getTaskResult(pointsUrl.MeetingAssistance);
-    const transcriptionResult = await getTaskResult(transcriptionUrl.Transcription);
+    const newFileName = item.fileName + '.mp3';
+    const { pointsData, transcriptionData } = await transferText(newFileName);
 
     const newList = recordList.value.map((record) => {
       if (record.startTimestamp === item.startTimestamp) {
-        const newRecord = {
-          ...record,
-          pointsData: pointsResult.MeetingAssistance,
-          transcriptionData: transcriptionResult.Transcription
-        };
+        const newRecord = { ...record, pointsData, transcriptionData };
 
         if (newRecord.pointsData.Actions) {
           store.commit('setPopupEventData', newRecord);
@@ -154,10 +169,10 @@ const handleAgainTransferText = async (item) => {
 
     store.commit('setRecordList', newList);
   } catch (error) {
-    console.log('失败', error);
+    uni.showToast({ title: '录音文件重新转写失败！', icon: 'none', mask: true });
   } finally {
-    store.commit('setAgainTransferTextLoading', true);
     againTransferTextId.value = null;
+    store.commit('setAgainTransferTextLoading', false);
   }
 };
 </script>

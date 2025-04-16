@@ -23,17 +23,17 @@ const accessTokenExpireKey = 'aliyun_access_token_expire';
 
 /**获取授权令牌 */
 export const getAccessToken = async () => {
-  // 检查 Token 是否有效
-  let accessTokenVal = uni.getStorageSync(accessTokenKey);
-  let accessTokenExpireVal = parseInt(uni.getStorageSync(accessTokenExpireKey));
-  console.log('缓存中的Token:', accessTokenVal);
-
-  // 如果当前 Token 未过期
-  if (accessTokenVal && accessTokenExpireVal && accessTokenExpireVal > Date.now()) {
-    return accessTokenVal;
-  }
-
   try {
+    // 检查 Token 是否有效
+    let accessTokenVal = uni.getStorageSync(accessTokenKey);
+    let accessTokenExpireVal = parseInt(uni.getStorageSync(accessTokenExpireKey));
+    console.log('缓存中的Token:', accessTokenVal);
+
+    // 如果当前 Token 未过期
+    if (accessTokenVal && accessTokenExpireVal && accessTokenExpireVal > Date.now()) {
+      return accessTokenVal;
+    }
+
     const date = new Date();
     const timestamp = date.toISOString();
     const nonce = Math.random().toString(36).substr(2, 15);
@@ -83,19 +83,18 @@ export const getAccessToken = async () => {
       method: 'GET'
     });
 
-    console.log(`获取新Token`, response);
     if (response.statusCode === 200) {
       accessTokenVal = response.data.Token.Id;
       accessTokenExpireVal = response.data.Token.ExpireTime * 1000;
-      // 将 Token 和过期时间存储到缓存
       uni.setStorageSync(accessTokenKey, accessTokenVal);
       uni.setStorageSync(accessTokenExpireKey, accessTokenExpireVal.toString());
       return accessTokenVal;
     } else {
-      console.log(`获取新Token失败`);
+      throw new Error(`获取Token失败，状态码: ${response.statusCode}`);
     }
   } catch (error) {
-    console.log(`获取新Token失败`, error);
+    console.error('获取Token错误:', error);
+    throw error;
   }
 };
 
@@ -132,17 +131,22 @@ export const uploadToOss = async (fileName, filePath) => {
           signature: signature
         },
         success: async (res) => {
-          console.log('上传录音成功', res);
-          resolve(newFileName);
+          if (res.statusCode === 200) {
+            console.log('上传录音成功', res);
+            resolve(newFileName);
+          } else {
+            reject(new Error(`上传失败，状态码: ${res.statusCode}`));
+          }
         },
         fail: (err) => {
-          console.log(`上传录音失败`);
-          reject(err);
+          console.error('上传录音失败:', err);
+          reject(new Error(`上传失败: ${err.errMsg}`));
         }
       });
     });
   } catch (error) {
-    console.log(`上传录音失败`, error);
+    console.error('上传录音错误:', error);
+    throw error;
   }
 };
 
@@ -157,11 +161,17 @@ export const generateOnlineUrl = async (fileName) => {
       secure: true,
       authorizationV4: true
     });
+
     const signatureUrl = await client.signatureUrlV4('GET', 3600, { headers: {} }, fileName);
-    console.log('生成在线链接', signatureUrl);
-    return signatureUrl;
+
+    if (signatureUrl) {
+      console.log('生成在线链接', signatureUrl);
+      return signatureUrl;
+    } else {
+      throw new Error('生成在线链接失败');
+    }
   } catch (error) {
-    console.log('生成在线链接失败', error);
+    throw error;
   }
 };
 
@@ -278,10 +288,11 @@ export const createTranscriptionTask = async (audioUrl) => {
     if (response.statusCode === 200) {
       return response.data.Data.TaskId;
     } else {
-      console.log(`创建转录任务失败`);
+      throw new Error(`创建转录任务失败，状态码: ${response.statusCode}`);
     }
   } catch (error) {
-    console.log(`创建转录任务失败`, error);
+    console.error('创建转录任务错误:', error);
+    throw error;
   }
 };
 
@@ -396,10 +407,10 @@ export const createKeyPointsTask = async (audioUrl) => {
     if (response.statusCode === 200) {
       return response.data.Data.TaskId;
     } else {
-      console.log(`创建要点提炼任务失败`);
+      throw new Error(`创建要点提炼任务失败`);
     }
   } catch (error) {
-    console.log(`创建要点提炼任务失败`, error);
+    throw error;
   }
 };
 
@@ -490,72 +501,64 @@ export const getTaskInfo = async (taskId) => {
       }
     });
 
-    console.log('查询任务信息', response);
     if (response.statusCode === 200) {
       return response.data.Data;
     } else {
-      console.log(`查询任务信息失败`);
+      throw new Error(`查询任务信息失败，状态码: ${response.statusCode}`);
     }
   } catch (error) {
-    console.log(`查询任务信息失败`, error);
+    console.error('查询任务信息错误:', error);
+    throw error;
   }
 };
 
 /**查询任务结果URL */
-export const getTaskResultUrl = async (taskId, taskName) => {
+export const getTaskResult = async (taskId, taskName) => {
   try {
     let status = 'RUNNING';
-    let maxRetries = 10; // 最大重试次数
-    let retryCount = 0;
+    let maxRetries = 10;
+    let retryCount = 1;
 
     while ((status === 'RUNNING' || status === 'ONGOING') && retryCount < maxRetries) {
-      // 获取任务状态
+      console.log(`${taskName} 任务，第${retryCount}次查询...`);
       const result = await getTaskInfo(taskId);
-      status = result.TaskStatus || result.Status;
+      console.log(`${taskName} 任务结果`, result);
 
-      if (status === 'SUCCESS' || status === 'COMPLETED') {
-        // 如果有转写结果URL，需要下载结果
-        if (result.Result && result.Result) {
-          console.log('查询任务结果URL', result.Result);
-          const { MeetingAssistance, Transcription } = result.Result;
-          return { MeetingAssistance, Transcription };
-        }
-      } else if (status === 'FAILED') {
-        console.log(`任务失败`);
-        return null; // 转录失败时直接返回 null
+      if (result.TaskStatus === 'SUCCESS' || result.TaskStatus === 'COMPLETED') {
+        return result.Result;
+      } else if (result.TaskStatus === 'FAILED') {
+        throw new Error(`${taskName} 任务失败: ${result.ErrorMessage || '未知错误'}`);
       } else {
-        // 任务仍在进行中，等待后再次查询
-        console.log(`第${retryCount + 1}次查询 ${taskName} 任务状态...`);
         await new Promise((resolve) => setTimeout(resolve, 5000));
         retryCount++;
       }
     }
 
     if (retryCount >= maxRetries) {
-      console.log('任务超时，请稍后再试');
-      return null; // 任务超时后直接返回 null
+      throw new Error(`${taskName} 任务超时，请稍后再试`);
     }
   } catch (error) {
-    console.log(`任务失败`, error);
-    return null; // 发生错误时直接返回 null
+    console.error('查询任务结果URL错误:', error);
+    throw error;
   }
 };
 
-/**查询任务结果 */
-export const getTaskResult = async (url) => {
+/**查询任务结果的数据 */
+export const getTaskResultData = async (url, taskName) => {
   try {
     const response = await uni.request({
       url: url,
       method: 'GET'
     });
 
-    console.log('查询任务结果', response);
     if (response.statusCode === 200) {
+      console.log(`${taskName} 任务结果的数据`, response.data);
       return response.data;
     } else {
-      console.log('任务失败');
+      throw new Error(`${taskName} 查询任务结果的数据失败，状态码: ${response.statusCode}`);
     }
   } catch (error) {
-    console.log(`任务失败`, error);
+    console.error('查询任务结果的数据错误:', error);
+    throw error;
   }
 };

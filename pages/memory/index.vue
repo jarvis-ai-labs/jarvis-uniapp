@@ -62,8 +62,8 @@ import {
   uploadToOss,
   generateOnlineUrl,
   createKeyPointsTask,
-  getTaskResultUrl,
   getTaskResult,
+  getTaskResultData,
   createTranscriptionTask
 } from '@/api/api';
 
@@ -101,7 +101,7 @@ const recReq = () => {
 
   RecordApp.RequestPermission(
     () => {
-      console.log('已获得录音权限，可以开始录音了', 2);
+      console.log('已获得录音权限，可以开始录音了');
       recStart();
     },
     (msg, isUserNotAllow) => {
@@ -247,7 +247,7 @@ const recStop = () => {
       uploadTransfer(arrayBuffer, duration, mime);
     },
     (msg) => {
-      console.log('结束录音失败：' + msg, 1);
+      console.log('结束录音失败：' + msg);
     }
   );
 };
@@ -280,38 +280,62 @@ const getFilePath = (arrayBuffer) => {
   });
 };
 
-const uploadTransfer = async (arrayBuffer, duration, mime) => {
-  if (transferTextLoading.value || againTransferTextLoading.value) return;
-  store.commit('setTransferTextLoading', true);
+const uploadAndGetUrl = async (arrayBuffer) => {
   try {
     const filePath = await getFilePath(arrayBuffer);
 
     const newFileName = await uploadToOss(fileName, filePath);
 
+    return { filePath, newFileName };
+  } catch (error) {
+    throw error;
+  }
+};
+
+const transferText = async (newFileName) => {
+  try {
     const onlineUrl = await generateOnlineUrl(newFileName);
 
-    const pointsId = await createKeyPointsTask(onlineUrl);
     const transcriptionId = await createTranscriptionTask(onlineUrl);
+    const pointsId = await createKeyPointsTask(onlineUrl);
 
-    const pointsUrl = await getTaskResultUrl(pointsId, '要点提炼');
-    const transcriptionUrl = await getTaskResultUrl(transcriptionId, '转录');
+    const transcriptionResult = await getTaskResult(transcriptionId, '转录');
+    const pointsResult = await getTaskResult(pointsId, '要点提炼');
 
-    const pointsResult = await getTaskResult(pointsUrl.MeetingAssistance);
-    const transcriptionResult = await getTaskResult(transcriptionUrl.Transcription);
+    const transcriptionData = await getTaskResultData(transcriptionResult.Transcription, '转录');
+    const pointsData = await getTaskResultData(pointsResult.MeetingAssistance, '要点提炼');
+
+    return {
+      transcriptionData: transcriptionData.Transcription,
+      pointsData: pointsData.MeetingAssistance
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
+const uploadTransfer = async (arrayBuffer, duration, mime) => {
+  if (transferTextLoading.value || againTransferTextLoading.value) return;
+  store.commit('setTransferTextLoading', true);
+  uni.showToast({ title: '开始上传录音文件并转写...', icon: 'none', mask: true });
+
+  try {
+    const { filePath, newFileName } = await uploadAndGetUrl(arrayBuffer);
+
+    const { pointsData, transcriptionData } = await transferText(newFileName);
 
     const recordInfo = {
       fileName,
       mime,
       filePath,
-      onlineUrl,
       duration,
       durationText: formatDuration(duration),
       startTimestamp,
       startTimeText: formatDate(startTimestamp),
       arrayBuffer,
       size: arrayBuffer.byteLength,
-      pointsData: pointsResult.MeetingAssistance,
-      transcriptionData: transcriptionResult.Transcription
+      pointsData,
+      transcriptionData
     };
     console.log('录音信息', recordInfo);
 
@@ -321,7 +345,7 @@ const uploadTransfer = async (arrayBuffer, duration, mime) => {
 
     store.commit('setRecordList', [recordInfo, ...recordList.value]);
   } catch (error) {
-    console.log('失败', error);
+    uni.showToast({ title: '上传录音文件并转写失败！', icon: 'none', mask: true });
   } finally {
     store.commit('setTransferTextLoading', false);
   }
@@ -329,14 +353,12 @@ const uploadTransfer = async (arrayBuffer, duration, mime) => {
 
 const recPause = () => {
   if (RecordApp.GetCurrentRecOrNull()) {
-    RecordApp.Pause();
-    console.log('已暂停');
+    RecordApp.Pause(); // 暂停录音
   }
 };
 const recResume = () => {
   if (RecordApp.GetCurrentRecOrNull()) {
-    RecordApp.Resume();
-    console.log('继续录音中...');
+    RecordApp.Resume(); // 继续录音
   }
 };
 
@@ -360,15 +382,13 @@ const tryStart_androidNotifyService = () => {
         '搭配常驻通知的Android后台录音保活服务已打开，ForegroundService已运行(通知可能不显示或会延迟显示，并不影响服务运行)，通知显示状态(1有通知权限 3可能无权限)code=' +
           nCode +
           ' msg=' +
-          nMsg,
-        2
+          nMsg
       );
     })
     .catch((e) => {
-      console.log('原生插件的androidNotifyService接口调用出错：' + e.message, 1);
+      console.log('原生插件的androidNotifyService接口调用出错：' + e.message);
       console.log(
-        '如果你已集成了配套的原生录音插件，并且是打包自定义基座运行，请检查本项目根目录的AndroidManifest.xml里面是否已经解开了注释，否则被注释掉的service不会包含在App中',
-        1
+        '如果你已集成了配套的原生录音插件，并且是打包自定义基座运行，请检查本项目根目录的AndroidManifest.xml里面是否已经解开了注释，否则被注释掉的service不会包含在App中'
       );
     });
 };
@@ -381,7 +401,7 @@ const tryClose_androidNotifyService = () => {
       console.log('已关闭搭配常驻通知的Android后台录音保活服务');
     })
     .catch((e) => {
-      console.log('原生插件的androidNotifyService接口调用出错：' + e.message, 1);
+      console.log('原生插件的androidNotifyService接口调用出错：' + e.message);
     });
 };
 </script>
