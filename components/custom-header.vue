@@ -4,6 +4,7 @@
     <view class="header-content">
       <!-- <uni-icons type="list" size="24" color="#ffffff" /> -->
       <text class="header-title">Hi Jarvis</text>
+
       <view class="header-right">
         <image class="avatar" src="/static/images/jarvis-avatar.png" mode="widthFix" />
         <view class="header-right-item">

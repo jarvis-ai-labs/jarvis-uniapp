@@ -1,7 +1,7 @@
 <template>
   <view class="text-list">
     <view class="textlodingbox" v-if="transferTextLoading"><i class="uni-toast__icon uni-loading"></i></view>
-    <view class="text-list-item" v-for="item in recordList" :key="item.startTimestamp" v-if="recordList.length > 0">
+    <view class="text-list-item" v-for="item in newRecordList" :key="item.startTimestamp">
       <view class="text-item-box">
         <uni-swipe-action>
           <uni-swipe-action-item>
@@ -15,21 +15,14 @@
                     {{ item.pointsData?.Keywords.length > 0 ? item.pointsData?.Keywords.join(' | ') : item.fileName }}
                   </view>
                   <view class="content">
-                    <!-- <uni-icons type="location" size="20" color="#979797" /> -->
                     {{ item.startTimeText }}
                   </view>
                 </view>
               </div>
-              <button class="btn-text" @click="handleAgainTransferText(item)">Text</button>
+              <button class="btn-text" @click="item.isOpen = !item.isOpen">文字</button>
             </view>
             <template #right>
               <view class="more-button-box">
-                <!-- <button class="more-button">
-                  <uni-icons type="more-filled" size="20" color="#3d3d4a" />
-                </button>
-                <button class="more-button">
-                  <uni-icons type="compose" size="20" color="#3d3d4a" />
-                </button> -->
                 <button class="more-button" @click="handleDelete(item)">
                   <uni-icons type="trash-filled" size="20" color="#3d3d4a" />
                 </button>
@@ -39,12 +32,15 @@
         </uni-swipe-action>
       </view>
 
-      <view class="text-item2">
-        <scroll-view scroll-y="true" class="text-item2-list">
-          <view class="textlodingbox" v-if="againTransferTextLoading && againTransferTextId === item.startTimestamp">
-            <i class="uni-toast__icon uni-loading"></i>
-          </view>
+      <view class="text-item2" v-if="item.isOpen">
+        <view class="textlodingbox" v-if="againTransferTextLoading && againTransferTextId === item.startTimestamp">
+          <i class="uni-toast__icon uni-loading"></i>
+        </view>
+        <view class="btn-text" v-else>
+          <text @click="handleAgainTransferText(item)">重新转录</text>
+        </view>
 
+        <scroll-view scroll-y="true" class="text-item2-list">
           <view class="text-box" v-for="text in item.transcriptionData?.Paragraphs" :key="text.ParagraphId">
             <view class="title">
               <text>说话人{{ text.SpeakerId }}: </text>
@@ -61,18 +57,18 @@
     <uni-popup ref="deleteDialog" type="dialog">
       <uni-popup-dialog
         type="info"
-        title="删除"
         cancelText="取消"
         confirmText="确定"
         content="确定删除该录音吗？"
         @confirm="deleteDialogConfirm"
-        @close="deleteDialogClose"></uni-popup-dialog>
+        @close="deleteDialogClose">
+      </uni-popup-dialog>
     </uni-popup>
   </view>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { formatDate } from '@/utils';
 import { useStore } from 'vuex';
 import {
@@ -91,6 +87,20 @@ const againTransferTextLoading = computed(() => store.state.againTransferTextLoa
 const dialogInfo = ref(null);
 const deleteDialog = ref(null);
 const againTransferTextId = ref(null);
+const newRecordList = ref([]);
+
+watch(recordList, (newVal) => {
+  console.log('监听录音列表', newVal.length, newVal);
+  newRecordList.value = newVal.map((item, index) => {
+    return { ...item, isOpen: index == 0 };
+  });
+});
+
+onMounted(() => {
+  newRecordList.value = recordList.value.map((item, index) => {
+    return { ...item, isOpen: index == 0 };
+  });
+});
 
 const handleDelete = (item) => {
   dialogInfo.value = item;
@@ -125,7 +135,7 @@ const handleAgainTransferText = async (item) => {
     const pointsResult = await getTaskResult(pointsUrl.MeetingAssistance);
     const transcriptionResult = await getTaskResult(transcriptionUrl.Transcription);
 
-    const newRecordList = recordList.value.map((record) => {
+    const newList = recordList.value.map((record) => {
       if (record.startTimestamp === item.startTimestamp) {
         const newRecord = {
           ...record,
@@ -142,7 +152,7 @@ const handleAgainTransferText = async (item) => {
       return record;
     });
 
-    store.commit('setRecordList', newRecordList);
+    store.commit('setRecordList', newList);
   } catch (error) {
     console.log('失败', error);
   } finally {

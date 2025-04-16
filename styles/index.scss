@@ -161,6 +161,13 @@
     background: #1d1d23;
     border-radius: 18px;
     margin-bottom: 10px;
+    .text-item-box {
+      width: 100%;
+      height: fit-content;
+      background: #272730;
+      border-radius: 18px;
+      padding: 10px;
+    }
     .text-item {
       width: 100%;
       height: fit-content;
@@ -180,8 +187,8 @@
           justify-content: center;
           align-items: center;
           image {
-            width: 14px;
-            height: 20px;
+            width: 25px;
+            height: auto;
           }
         }
         .text-box {
@@ -207,22 +214,15 @@
       .btn-text {
         width: 60px;
         height: 30px;
+        line-height: 30px;
         border-radius: 30px;
         border: 1px solid #3d3d4a;
         background: #1d1d23;
         font-family: Avenir;
         font-weight: 300;
-        font-size: 12px;
+        font-size: 14px;
         color: #3d3d4a;
       }
-    }
-
-    .text-item-box {
-      width: 100%;
-      height: fit-content;
-      background: #272730;
-      border-radius: 18px;
-      padding: 10px;
     }
 
     .more-button-box {
@@ -233,6 +233,7 @@
       .more-button {
         width: 60px;
         height: 30px;
+        line-height: 30px;
         border-radius: 30px;
         border: 1px solid #3d3d4a;
         background: #1d1d23;
@@ -246,16 +247,20 @@
     .text-item2 {
       width: 100%;
       padding: 10px;
-      .text-title {
+      .btn-text {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+        text-align: right;
         font-family: Avenir;
         font-weight: 300;
         font-size: 14px;
-        color: #7a7a7a;
-        text-align: right;
+        color: #815ef6;
       }
+
       .text-item2-list {
         width: 100%;
-        max-height: 200px;
+        max-height: calc(100vh - 400px);
         .text-box {
           width: 100%;
           height: fit-content;
@@ -370,6 +375,10 @@
           position: absolute;
           left: 0;
           top: -15px;
+        }
+        .event-content-box-content {
+          width: 100%;
+          max-height: 300px;
         }
       }
     }

@@ -16,10 +16,12 @@
             </view>
             <view class="event-content-box">
               <view class="event-content-box-title">详情</view>
-              <view>{{ popupEventData.startTimeText }}</view>
-              <view v-for="(text, index) in popupEventData.pointsData?.Actions" :key="index">
-                {{ text.Text }}
-              </view>
+              <scroll-view scroll-y="true" class="event-content-box-content">
+                <view>{{ popupEventData.startTimeText }}</view>
+                <view v-for="(text, index) in popupEventData.pointsData?.Actions" :key="index">
+                  {{ text.Text }}
+                </view>
+              </scroll-view>
             </view>
           </view>
         </view>
