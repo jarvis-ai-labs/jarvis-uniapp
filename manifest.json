@@ -138,7 +138,13 @@
             }
         },
         "devServer" : {
-            "proxy" : {}
+            "proxy" : {
+                "/api/v1": {
+                    "target": "https://dashscope.aliyuncs.com",
+                    "changeOrigin": true,
+                    "secure": false
+                }
+            }
         }
     }
 }

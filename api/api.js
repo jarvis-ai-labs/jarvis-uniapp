@@ -18,6 +18,8 @@ const APPKEY = import.meta.env.VITE_APPKEY;
 const ACCESSKEYID = import.meta.env.VITE_ACCESSKEYID;
 const ACCESSKEYSECRET = import.meta.env.VITE_ACCESSKEYSECRET;
 const TINGWU_APPKEY = import.meta.env.VITE_TINGWU_APPKEY;
+const BAILIAN_API_KEY = import.meta.env.VITE_ALIYUN_BAILIAN_APIKEY;
+
 const accessTokenKey = 'aliyun_access_token';
 const accessTokenExpireKey = 'aliyun_access_token_expire';
 
@@ -559,6 +561,96 @@ export const getTaskResultData = async (url, taskName) => {
     }
   } catch (error) {
     console.error('查询任务结果的数据错误:', error);
+    throw error;
+  }
+};
+
+// HTTP调用
+// 图像模型处理时间较长，为了避免请求超时，HTTP调用仅支持异步获取模型结果。您需要发起两个请求：
+
+// 创建任务：首先发送一个请求创建任务，该请求会返回任务ID。
+
+// 根据任务ID查询结果：使用上一步获得的任务ID，查询模型生成的结果。
+
+// 创建任务
+// POST https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis
+
+// 根据任务ID查询结果
+// GET https://dashscope.aliyuncs.com/api/v1/tasks/{task_id}
+
+/**生成图片 */
+export const createImageSynthesisTask = async (prompt) => {
+  try {
+    const response = await uni.request({
+      url: 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis',
+      method: 'POST',
+      header: {
+        'X-DashScope-Async': 'enable',
+        Authorization: `Bearer ${BAILIAN_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      data: {
+        model: 'wanx2.1-t2i-turbo',
+        input: {
+          prompt: prompt,
+          negative_prompt: '低分辨率、错误、最差质量、低质量、残缺、多余的手指、比例不良'
+        },
+        parameters: { size: '512*512', n: 1 }
+      }
+    });
+
+    console.log('生成图片', response);
+    if (response.statusCode === 200) {
+      return response.data.output;
+    } else {
+      throw new Error(`生成图片失败，状态码: ${response.statusCode}`);
+    }
+  } catch (error) {
+    console.error('生成图片错误:', error);
+    throw error;
+  }
+};
+
+/**根据任务ID查询结果 */
+export const getSynthesisTask = async (taskId) => {
+  try {
+    let status = 'PENDING';
+    let maxRetries = 10;
+    let retryCount = 1;
+
+    while ((status === 'PENDING' || status === 'RUNNING' || status === 'SUSPENDED') && retryCount < maxRetries) {
+      console.log(`生成图片任务，第${retryCount}次查询...`);
+
+      const response = await uni.request({
+        url: `https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`,
+        method: 'GET',
+        header: { Authorization: `Bearer ${BAILIAN_API_KEY}` }
+      });
+
+      console.log(`生成图片任务结果`, response);
+
+      if (response.statusCode === 200) {
+        const output = response.data.output;
+        const taskStatus = output.task_status;
+
+        if (taskStatus === 'SUCCEEDED') {
+          return output;
+        } else if (taskStatus === 'FAILED' || taskStatus === 'UNKNOWN') {
+          throw new Error(`生成图片任务失败: ${output.message}`);
+        } else if (taskStatus === 'PENDING' || taskStatus === 'RUNNING' || taskStatus === 'SUSPENDED') {
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+          retryCount++;
+        }
+      } else {
+        throw new Error(`查询任务失败，状态码: ${response.statusCode}`);
+      }
+    }
+
+    if (retryCount >= maxRetries) {
+      throw new Error(`${taskName} 任务超时，请稍后再试`);
+    }
+  } catch (error) {
+    console.error('查询任务结果URL错误:', error);
     throw error;
   }
 };

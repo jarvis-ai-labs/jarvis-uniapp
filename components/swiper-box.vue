@@ -9,21 +9,29 @@
       @swiper="onSwiperEvent"
       @slideChange="onSlideChange">
       <z-swiper-item v-for="(event, eventIndex) in eventList1" :key="eventIndex" v-if="eventList1.length > 0">
-        <view class="event-box" style="background: url('/static/images/bg-event.png') no-repeat center center">
-          <uni-icons type="checkbox" size="24" color="#ffffff" />
+        <view
+          class="event-box"
+          :style="
+            event.imageUrl ? `background: url(${event.imageUrl}) no-repeat center center; background-size: cover;` : ''
+          ">
+          <view class="event-box-content">
+            <uni-icons type="checkbox" size="24" color="#ffffff" />
 
-          <view class="text">
-            {{ getText(event.pointsData?.Actions[0].Text) }}
+            <view class="text">
+              {{ getText(event.pointsData?.Actions[0].Text) }}
+            </view>
+            <view class="text" v-if="event.pointsData?.Actions.length > 1">...</view>
+
+            <button class="event-btn" @click="handleEvent(event)">查看详情</button>
           </view>
-          <view class="text" v-if="event.pointsData?.Actions.length > 1">...</view>
-
-          <button class="event-btn" @click="handleEvent(event)">查看详情</button>
         </view>
       </z-swiper-item>
       <z-swiper-item v-else>
         <view class="event-box">
-          <uni-icons type="checkbox" size="24" color="#ffffff" />
-          <button class="event-btn">Event</button>
+          <view class="event-box-content">
+            <uni-icons type="checkbox" size="24" color="#ffffff" />
+            <button class="event-btn" @click="handleImageSynthesis">Event</button>
+          </view>
         </view>
       </z-swiper-item>
     </z-swiper>
@@ -40,20 +48,28 @@
         <z-swiper-item v-for="(event, eventIndex) in eventList2" :key="eventIndex" v-if="eventList2.length > 0">
           <view
             class="event-box"
-            style="background: url('/static/images/bg-event-2.png') no-repeat center center"
+            :style="
+              event.imageUrl
+                ? `background: url(${event.imageUrl}) no-repeat center center; background-size: cover;`
+                : ''
+            "
             @click="handleEvent(event)">
-            <text class="iconfont">&#xe61e;</text>
+            <view class="event-box-content">
+              <text class="iconfont">&#xe61e;</text>
 
-            <view class="text">
-              {{ getText(event.pointsData?.Actions[0].Text) }}
+              <view class="text">
+                {{ getText(event.pointsData?.Actions[0].Text) }}
+              </view>
+              <view class="text" v-if="event.pointsData?.Actions.length > 1">...</view>
             </view>
-            <view class="text" v-if="event.pointsData?.Actions.length > 1">...</view>
           </view>
         </z-swiper-item>
         <z-swiper-item v-else>
           <view class="event-box">
-            <text class="iconfont">&#xe61e;</text>
-            <view class="text">Schedule</view>
+            <view class="event-box-content">
+              <text class="iconfont">&#xe61e;</text>
+              <view class="text">Schedule</view>
+            </view>
           </view>
         </z-swiper-item>
       </z-swiper>
@@ -71,19 +87,29 @@
           :key="eventIndex"
           v-if="eventList3.length > 0"
           @click="handleEvent(event)">
-          <view class="event-box" style="background: url('/static/images/bg-event-3.png') no-repeat center center">
-            <text class="iconfont">&#xe613;</text>
+          <view
+            class="event-box"
+            :style="
+              event.imageUrl
+                ? `background: url(${event.imageUrl}) no-repeat center center; background-size: cover;`
+                : ''
+            ">
+            <view class="event-box-content">
+              <text class="iconfont">&#xe613;</text>
 
-            <view class="text">
-              {{ getText(event.pointsData?.Actions[0].Text) }}
+              <view class="text">
+                {{ getText(event.pointsData?.Actions[0].Text) }}
+              </view>
+              <view class="text" v-if="event.pointsData?.Actions.length > 1">...</view>
             </view>
-            <view class="text" v-if="event.pointsData?.Actions.length > 1">...</view>
           </view>
         </z-swiper-item>
         <z-swiper-item v-else>
           <view class="event-box">
-            <text class="iconfont">&#xe613;</text>
-            <view class="text">News</view>
+            <view class="event-box-content">
+              <text class="iconfont">&#xe613;</text>
+              <view class="text">News</view>
+            </view>
           </view>
         </z-swiper-item>
       </z-swiper>
@@ -115,9 +141,7 @@ watch(recordList, (newVal) => {
 const updateEventLists = () => {
   if (!swiperEventInstance.value || !swiperEventInstance2.value || !swiperEventInstance3.value) return;
 
-  console.log('录音列表', recordList.value.length, recordList.value);
-
-  const newEventList = recordList.value.filter((item) => item.pointsData.Actions);
+  const newEventList = recordList.value.filter((item) => item.pointsData?.Actions);
   oldEventList.value = newEventList.sort((a, b) => a.startTimestamp - b.startTimestamp);
 
   console.log('事件列表', oldEventList.value.length, oldEventList.value);
@@ -192,11 +216,11 @@ const onSlideChange3 = (swiper) => {
   }
 };
 
-const handleEvent = (item) => {
+const handleEvent = async (item) => {
   store.commit('setPopupEventData', item);
 };
 
 const getText = (text) => {
-  return text.length > 20 ? text.slice(0, 20) + '...' : text;
+  return text.length > 10 ? text.slice(0, 10) + '...' : text;
 };
 </script>

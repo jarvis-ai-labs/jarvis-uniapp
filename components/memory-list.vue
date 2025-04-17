@@ -10,11 +10,16 @@
                 <div class="type-box">
                   <image src="/static/images/icon-type-write.png" mode="widthFix" />
                 </div>
-                <view class="text-box">
+                <view class="text-box" v-if="item.pointsData?.Keywords.length > 0">
                   <view class="title">
-                    {{ item.pointsData?.Keywords.length > 0 ? item.pointsData?.Keywords.join(' | ') : item.fileName }}
+                    {{ item.pointsData?.Keywords.join(' | ') }}
                   </view>
                   <view class="content">
+                    {{ item.startTimeText }}
+                  </view>
+                </view>
+                <view class="text-box" v-else>
+                  <view class="title">
                     {{ item.startTimeText }}
                   </view>
                 </view>
@@ -77,7 +82,9 @@ import {
   createKeyPointsTask,
   getTaskResult,
   getTaskResultData,
-  createTranscriptionTask
+  createTranscriptionTask,
+  createImageSynthesisTask,
+  getSynthesisTask
 } from '@/api/api';
 
 const store = useStore();
@@ -97,6 +104,8 @@ watch(recordList, (newVal) => {
 });
 
 onMounted(() => {
+  // console.log('录音列表', recordList.value.length, recordList.value);
+
   newRecordList.value = recordList.value.map((item, index) => {
     return { ...item, isOpen: index == 0 };
   });
@@ -141,6 +150,16 @@ const transferText = async (newFileName) => {
   }
 };
 
+const getImageSynthesisUrl = async (item) => {
+  try {
+    const imageSynthesisTask = await createImageSynthesisTask(item.pointsData?.Actions[0].Text);
+    const synthesisTask = await getSynthesisTask(imageSynthesisTask.task_id);
+    return synthesisTask.results[0].url;
+  } catch (error) {
+    console.error('生成图片失败', error);
+  }
+};
+
 const handleAgainTransferText = async (item) => {
   if (transferTextLoading.value || againTransferTextLoading.value) return;
   store.commit('setAgainTransferTextLoading', true);
@@ -154,21 +173,29 @@ const handleAgainTransferText = async (item) => {
     const newFileName = item.fileName + '.mp3';
     const { pointsData, transcriptionData } = await transferText(newFileName);
 
-    const newList = recordList.value.map((record) => {
+    // 更新记录列表
+    const updatedRecordList = recordList.value.map((record) => {
       if (record.startTimestamp === item.startTimestamp) {
-        const newRecord = { ...record, pointsData, transcriptionData };
-
-        if (newRecord.pointsData.Actions) {
-          store.commit('setPopupEventData', newRecord);
-        }
-
-        return newRecord;
+        return { ...record, pointsData, transcriptionData };
       }
       return record;
     });
 
-    store.commit('setRecordList', newList);
+    // 如果有 Actions，生成图片
+    const recordWithActions = updatedRecordList.find(
+      (record) => record.startTimestamp === item.startTimestamp && record.pointsData?.Actions
+    );
+
+    if (recordWithActions) {
+      const imageUrl = await getImageSynthesisUrl(recordWithActions);
+      recordWithActions.imageUrl = imageUrl;
+      store.commit('setPopupEventData', recordWithActions);
+    }
+
+    console.log('更新后的录音列表', updatedRecordList);
+    store.commit('setRecordList', updatedRecordList);
   } catch (error) {
+    console.error('重新转写失败:', error);
     uni.showToast({ title: '录音文件重新转写失败！', icon: 'none', mask: true });
   } finally {
     againTransferTextId.value = null;

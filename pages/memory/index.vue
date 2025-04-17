@@ -64,7 +64,9 @@ import {
   createKeyPointsTask,
   getTaskResult,
   getTaskResultData,
-  createTranscriptionTask
+  createTranscriptionTask,
+  createImageSynthesisTask,
+  getSynthesisTask
 } from '@/api/api';
 
 import { useStore } from 'vuex';
@@ -314,6 +316,16 @@ const transferText = async (newFileName) => {
   }
 };
 
+const getImageSynthesisUrl = async (item) => {
+  try {
+    const imageSynthesisTask = await createImageSynthesisTask(item.pointsData?.Actions[0].Text);
+    const synthesisTask = await getSynthesisTask(imageSynthesisTask.task_id);
+    return synthesisTask.results[0].url;
+  } catch (error) {
+    console.error('生成图片失败', error);
+  }
+};
+
 const uploadTransfer = async (arrayBuffer, duration, mime) => {
   if (transferTextLoading.value || againTransferTextLoading.value) return;
   store.commit('setTransferTextLoading', true);
@@ -335,11 +347,14 @@ const uploadTransfer = async (arrayBuffer, duration, mime) => {
       arrayBuffer,
       size: arrayBuffer.byteLength,
       pointsData,
-      transcriptionData
+      transcriptionData,
+      imageUrl: ''
     };
     console.log('录音信息', recordInfo);
 
     if (recordInfo.pointsData.Actions) {
+      const imageUrl = await getImageSynthesisUrl(recordInfo);
+      recordInfo.imageUrl = imageUrl;
       store.commit('setPopupEventData', recordInfo);
     }
 
