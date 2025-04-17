@@ -127,8 +127,6 @@ const deleteDialogClose = () => {
 };
 
 const transferText = async (newFileName) => {
-  // uni.showToast({ title: '开始转写录音文件...', icon: 'none', mask: true });
-
   try {
     const onlineUrl = await generateOnlineUrl(newFileName);
 

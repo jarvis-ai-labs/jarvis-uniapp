@@ -139,10 +139,10 @@
         },
         "devServer" : {
             "proxy" : {
-                "/api/v1": {
-                    "target": "https://dashscope.aliyuncs.com",
-                    "changeOrigin": true,
-                    "secure": false
+                "/api/v1" : {
+                    "target" : "https://dashscope.aliyuncs.com",
+                    "changeOrigin" : true,
+                    "secure" : false
                 }
             }
         }

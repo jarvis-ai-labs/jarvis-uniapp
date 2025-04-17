@@ -78,8 +78,8 @@ const againTransferTextLoading = computed(() => store.state.againTransferTextLoa
 const vue3This = getCurrentInstance().proxy;
 const isRecording = ref(false);
 const recordDuration = ref('');
-const startTimestamp = Date.now();
-const fileName = formatFileName(startTimestamp);
+// const startTimestamp = Date.now();
+// const fileName = formatFileName(startTimestamp);
 
 onMounted(() => {
   vue3This.isMounted = true;
@@ -232,7 +232,7 @@ const recStop = () => {
     async (arrayBuffer, duration, mime) => {
       const recSet = (RecordApp.GetCurrentRecOrNull() || { set: { type: 'mp3' } }).set;
       console.log(
-        '已录制[' +
+        '当前已录制[' +
           mime +
           ']: ' +
           formatDuration(duration) +
@@ -242,8 +242,7 @@ const recStop = () => {
           recSet.sampleRate +
           'hz ' +
           recSet.bitRate +
-          'kbps',
-        2
+          'kbps'
       );
 
       uploadTransfer(arrayBuffer, duration, mime);
@@ -252,46 +251,6 @@ const recStop = () => {
       console.log('结束录音失败：' + msg);
     }
   );
-};
-
-const getFilePath = (arrayBuffer) => {
-  return new Promise((resolve, reject) => {
-    RecordApp.UniSaveLocalFile(
-      fileName + '.mp3',
-      arrayBuffer,
-      (savePath) => {
-        console.log('UniSaveLocalFile:', savePath);
-        uni.saveFile({
-          tempFilePath: savePath,
-          success: (res) => {
-            const filePath = res.savedFilePath;
-            console.log('saveFile:', filePath);
-            resolve(filePath);
-          },
-          fail: (err) => {
-            console.error('保存录音失败:', err);
-            reject(err);
-          }
-        });
-      },
-      (errMsg) => {
-        console.error('保存录音失败:', errMsg);
-        reject(errMsg);
-      }
-    );
-  });
-};
-
-const uploadAndGetUrl = async (arrayBuffer) => {
-  try {
-    const filePath = await getFilePath(arrayBuffer);
-
-    const newFileName = await uploadToOss(fileName, filePath);
-
-    return { filePath, newFileName };
-  } catch (error) {
-    throw error;
-  }
 };
 
 const transferText = async (newFileName) => {
@@ -305,7 +264,24 @@ const transferText = async (newFileName) => {
     const pointsResult = await getTaskResult(pointsId, '要点提炼');
 
     const transcriptionData = await getTaskResultData(transcriptionResult.Transcription, '转录');
+    //     {
+    //     "TaskId": "223110df025a4b4a858fbb100660aedd",
+    //     "Transcription": {
+    //         "AudioInfo": {
+    //             "Size": 4320,
+    //             "Duration": 2160,
+    //             "SampleRate": 16000,
+    //             "Language": "fspk"
+    //         }
+    //     }
+    // }
     const pointsData = await getTaskResultData(pointsResult.MeetingAssistance, '要点提炼');
+    //     {
+    //     "TaskId": "0db6c5c9ec7c4a98a35d1c43dacf815b",
+    //     "MeetingAssistance": {
+    //         "Keywords": []
+    //     }
+    // }
 
     return {
       transcriptionData: transcriptionData.Transcription,
@@ -331,39 +307,60 @@ const uploadTransfer = async (arrayBuffer, duration, mime) => {
   store.commit('setTransferTextLoading', true);
   uni.showToast({ title: '开始上传录音文件并转写...', icon: 'none', mask: true });
 
-  try {
-    const { filePath, newFileName } = await uploadAndGetUrl(arrayBuffer);
+  const startTimestamp = Date.now();
+  const fileName = formatFileName(startTimestamp);
 
-    const { pointsData, transcriptionData } = await transferText(newFileName);
+  RecordApp.UniSaveLocalFile(
+    fileName + '.mp3',
+    arrayBuffer,
+    (savePath) => {
+      console.log('UniSaveLocalFile:', savePath);
+      uni.saveFile({
+        tempFilePath: savePath,
+        success: async (res) => {
+          const filePath = res.savedFilePath;
+          console.log('saveFile:', filePath);
 
-    const recordInfo = {
-      fileName,
-      mime,
-      filePath,
-      duration,
-      durationText: formatDuration(duration),
-      startTimestamp,
-      startTimeText: formatDate(startTimestamp),
-      arrayBuffer,
-      size: arrayBuffer.byteLength,
-      pointsData,
-      transcriptionData,
-      imageUrl: ''
-    };
-    console.log('录音信息', recordInfo);
+          const newFileName = await uploadToOss(fileName, filePath);
 
-    if (recordInfo.pointsData.Actions) {
-      const imageUrl = await getImageSynthesisUrl(recordInfo);
-      recordInfo.imageUrl = imageUrl;
-      store.commit('setPopupEventData', recordInfo);
+          const { pointsData, transcriptionData } = await transferText(newFileName);
+
+          const recordInfo = {
+            fileName,
+            mime,
+            filePath,
+            duration,
+            durationText: formatDuration(duration),
+            startTimestamp,
+            startTimeText: formatDate(startTimestamp),
+            arrayBuffer,
+            size: arrayBuffer.byteLength,
+            pointsData,
+            transcriptionData,
+            imageUrl: ''
+          };
+          console.log('录音信息', recordInfo);
+
+          if (recordInfo.pointsData.Actions) {
+            const imageUrl = await getImageSynthesisUrl(recordInfo);
+            recordInfo.imageUrl = imageUrl;
+            store.commit('setPopupEventData', recordInfo);
+          }
+
+          store.commit('setRecordList', [recordInfo, ...recordList.value]);
+          store.commit('setTransferTextLoading', false);
+        },
+        fail: (err) => {
+          console.error('保存录音失败:', err);
+          store.commit('setTransferTextLoading', false);
+        }
+      });
+    },
+    (errMsg) => {
+      console.error('保存录音失败:', errMsg);
+      store.commit('setTransferTextLoading', false);
     }
-
-    store.commit('setRecordList', [recordInfo, ...recordList.value]);
-  } catch (error) {
-    uni.showToast({ title: '上传录音文件并转写失败！', icon: 'none', mask: true });
-  } finally {
-    store.commit('setTransferTextLoading', false);
-  }
+  );
 };
 
 const recPause = () => {
