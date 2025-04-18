@@ -275,7 +275,15 @@ const transferText = async (newFileName) => {
 
 const getImageSynthesisUrl = async (item) => {
   try {
-    const imageSynthesisTask = await createImageSynthesisTask(item.pointsData?.Actions[0].Text);
+    let prompt = '';
+    if (item.pointsData?.Actions.length > 0) {
+      item.pointsData?.Actions.forEach((action) => {
+        prompt += action.Text;
+      });
+    } else {
+      prompt = item.pointsData?.Actions[0].Text;
+    }
+    const imageSynthesisTask = await createImageSynthesisTask(prompt);
     const synthesisTask = await getSynthesisTask(imageSynthesisTask.task_id);
     return synthesisTask.results[0].url;
   } catch (error) {

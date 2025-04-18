@@ -166,7 +166,6 @@ const getImageSynthesisUrl = async (item) => {
     } else {
       prompt = item.pointsData?.Actions[0].Text;
     }
-    console.log('prompt', prompt);
     const imageSynthesisTask = await createImageSynthesisTask(prompt);
     const synthesisTask = await getSynthesisTask(imageSynthesisTask.task_id);
     return synthesisTask.results[0].url;
