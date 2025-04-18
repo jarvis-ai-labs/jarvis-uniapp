@@ -1,6 +1,12 @@
 {
   "pages": [
     {
+      "path": "pages/home/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/memory/index",
       "style": {
         "navigationStyle": "custom"

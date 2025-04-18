@@ -1,6 +1,4 @@
 import App from './App';
-import './global.scss';
-import './styles/index.scss';
 
 import store from './store';
 

@@ -15,4 +15,6 @@ export default {
 <style lang="scss">
 @use '@/uni_modules/zebra-swiper/index.scss';
 @use '@/uni_modules/zebra-swiper/modules/effect-cards/effect-cards.scss';
+
+@import '@/styles/global.scss';
 </style>

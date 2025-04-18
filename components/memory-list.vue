@@ -1,6 +1,6 @@
 <template>
   <view class="text-list">
-    <view class="textlodingbox" v-if="transferTextLoading"><i class="uni-toast__icon uni-loading"></i></view>
+    <view class="loading-box" v-if="transferTextLoading"><i class="uni-toast__icon uni-loading"></i></view>
     <view class="text-list-item" v-for="item in newRecordList" :key="item.startTimestamp">
       <view class="text-item-box">
         <uni-swipe-action>
@@ -12,7 +12,7 @@
                 </div>
 
                 <view
-                  class="textlodingbox"
+                  class="loading-box"
                   v-if="againTransferTextLoading && againTransferTextId === item.startTimestamp">
                   <uni-load-more iconType="circle" status="loading" :showText="false" color="#fff" />
                   <!-- <i class="uni-toast__icon uni-loading"></i> -->
@@ -45,7 +45,7 @@
       </view>
 
       <view class="text-item2" v-if="item.isOpen">
-        <view class="textlodingbox" v-if="againTransferTextLoading && againTransferTextId === item.startTimestamp">
+        <view class="loading-box" v-if="againTransferTextLoading && againTransferTextId === item.startTimestamp">
           <uni-load-more iconType="circle" status="loading" :showText="false" color="#fff" />
           <!-- <i class="uni-toast__icon uni-loading"></i> -->
         </view>
@@ -217,3 +217,167 @@ const handleAgainTransferText = async (item) => {
   }
 };
 </script>
+
+<style lang="scss" scoped>
+.text-list {
+  width: 100%;
+  padding: 0 30px 50px 30px;
+
+  .loading-box {
+    width: 100%;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .uni-toast__icon {
+      margin: 0;
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  .text-list-item {
+    width: 100%;
+    background: #1d1d23;
+    border-radius: 18px;
+    margin-bottom: 10px;
+    .text-item-box {
+      width: 100%;
+      height: fit-content;
+      background: #272730;
+      border-radius: 18px;
+      padding: 10px;
+    }
+    .text-item {
+      width: 100%;
+      height: fit-content;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      .item-left {
+        display: flex;
+        align-items: center;
+        width: calc(100% - 60px);
+        .type-box {
+          width: 60px;
+          height: 60px;
+          min-width: 60px;
+          background: #3c3c48;
+          border-radius: 50%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          image {
+            width: 30px;
+            height: auto;
+          }
+        }
+        .text-box {
+          width: calc(100% - 60px);
+          padding: 0 10px;
+          .title {
+            font-family: Avenir;
+            font-weight: 300;
+            font-size: 14px;
+            color: #ffffff;
+          }
+          .content {
+            font-family: Avenir;
+            font-weight: 300;
+            font-size: 12px;
+            text-transform: capitalize;
+            color: #979797;
+            display: flex;
+            align-items: center;
+          }
+        }
+      }
+      .btn-text {
+        width: 60px;
+        height: 30px;
+        line-height: 30px;
+        border-radius: 30px;
+        border: 1px solid #3d3d4a;
+        background: #1d1d23;
+        font-family: Avenir;
+        font-weight: 300;
+        font-size: 14px;
+        color: #3d3d4a;
+      }
+    }
+
+    .more-button-box {
+      width: fit-content;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      .more-button {
+        width: 60px;
+        height: 30px;
+        line-height: 30px;
+        border-radius: 30px;
+        border: 1px solid #3d3d4a;
+        background: #1d1d23;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 20px;
+      }
+    }
+
+    .text-item2 {
+      width: 100%;
+      padding: 10px;
+      .btn-text {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+        text-align: right;
+        font-family: Avenir;
+        font-weight: 300;
+        font-size: 14px;
+        color: #815ef6;
+      }
+
+      .text-item2-list {
+        width: 100%;
+        max-height: calc(100vh - 400px);
+        .text-box {
+          width: 100%;
+          height: fit-content;
+          padding: 10px 0;
+          border-bottom: 1px solid;
+          border-image: linear-gradient(
+              to right,
+              rgba(151, 151, 151, 0) 0%,
+              rgba(151, 151, 151, 0.2) 27.5%,
+              rgba(151, 151, 151, 0.2) 63.75%,
+              rgba(151, 151, 151, 0) 100%
+            )
+            1;
+
+          &:last-child {
+            border-bottom: none;
+          }
+          .title {
+            font-family: Avenir;
+            font-weight: 300;
+            font-size: 12px;
+            color: #979797;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+          .content {
+            font-family: Avenir;
+            font-weight: 300;
+            font-size: 14px;
+            color: #f0f0f0;
+          }
+        }
+      }
+    }
+  }
+}
+</style>

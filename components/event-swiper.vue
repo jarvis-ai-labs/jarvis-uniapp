@@ -115,6 +115,41 @@
       </z-swiper>
     </view>
   </view>
+
+  <uni-popup ref="popupEventRef" :mask-click="false">
+    <view class="popup-box">
+      <view class="event-popup-box">
+        <view class="event-popup-box2">
+          <image class="popup-title-img1" src="/static/images/popup-bg-event.png" mode="widthFix" />
+          <image class="popup-title-img2" src="/static/images/popup-title-event.png" mode="widthFix" />
+
+          <view class="event-content">
+            <view class="event-title">
+              {{
+                popupEventData.pointsData?.Keywords.length > 0
+                  ? popupEventData.pointsData?.Keywords.join(' | ')
+                  : popupEventData.fileName
+              }}
+            </view>
+            <view class="event-content-box">
+              <view class="event-content-box-title">详情</view>
+              <scroll-view scroll-y="true" class="event-content-box-content">
+                <view>{{ popupEventData.startTimeText }}</view>
+                <view v-for="(text, index) in popupEventData.pointsData?.Actions" :key="index">
+                  {{ text.Text }}
+                </view>
+              </scroll-view>
+            </view>
+          </view>
+        </view>
+      </view>
+      <image
+        class="popup-close-img"
+        src="/static/images/icon-close.png"
+        mode="widthFix"
+        @click="store.commit('setPopupEventData', false)" />
+    </view>
+  </uni-popup>
 </template>
 
 <script setup>
@@ -122,9 +157,12 @@ import { ref, watch, computed } from 'vue';
 import { useStore } from 'vuex';
 import { EffectCards } from '@/uni_modules/zebra-swiper/modules';
 
-const modules = ref([EffectCards]);
 const store = useStore();
 const recordList = computed(() => store.state.recordList);
+const popupEventData = computed(() => store.state.popupEventData);
+const modules = ref([EffectCards]);
+
+const popupEventRef = ref(null);
 const swiperEventInstance = ref(null);
 const swiperEventInstance2 = ref(null);
 const swiperEventInstance3 = ref(null);
@@ -132,6 +170,14 @@ const oldEventList = ref([]);
 const eventList1 = ref([]);
 const eventList2 = ref([]);
 const eventList3 = ref([]);
+
+watch(popupEventData, (newVal) => {
+  if (newVal) {
+    popupEventRef.value.open();
+  } else {
+    popupEventRef.value.close();
+  }
+});
 
 watch(recordList, (newVal) => {
   console.log('监听录音列表', newVal.length, newVal);
@@ -224,3 +270,190 @@ const getText = (text) => {
   return text.length > 10 ? text.slice(0, 10) + '...' : text;
 };
 </script>
+
+<style lang="scss" scoped>
+.swiper-box {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 20px;
+  margin-bottom: 10px;
+  .swiper {
+    margin: 0;
+  }
+
+  .schedule-document {
+    width: 160px;
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .event-swiper {
+    width: 190px;
+    height: 300px;
+    .event-box {
+      background: url('@/static/images/bg-event.png') no-repeat center center;
+      background-size: cover;
+    }
+  }
+  .event-swiper2 {
+    width: 160px;
+    height: 170px;
+    .event-box {
+      background: url('@/static/images/bg-event-2.png') no-repeat center center;
+      background-size: cover;
+    }
+  }
+  .event-swiper3 {
+    width: 160px;
+    height: 120px;
+    .event-box {
+      background: url('@/static/images/bg-event-3.png') no-repeat center center;
+      background-size: cover;
+    }
+  }
+
+  .event-box {
+    width: 95%;
+    height: 100%;
+    border-radius: 18px;
+
+    .event-box-content {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.204) 0%, rgba(0, 0, 0, 0.6) 100%);
+      backdrop-filter: blur(1px);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      position: relative;
+      font-family: Avenir;
+      font-weight: 300;
+      font-size: 12px;
+      color: #ffffff;
+    }
+
+    .event-btn {
+      width: 100%;
+      height: 50px;
+      line-height: 50px;
+      border-radius: 18px;
+      font-family: Avenir;
+      font-weight: 900;
+      font-size: 14px;
+      color: #000000;
+      margin-top: 5px;
+    }
+    .uni-icons {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+    .iconfont {
+      font-size: 20px;
+      color: #ffffff;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+    .text {
+      font-family: Avenir;
+      font-weight: 300;
+      font-size: 12px;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
+}
+
+.popup-box {
+  width: fit-content;
+  height: fit-content;
+  position: relative;
+  .popup-close-img {
+    width: 36px;
+    height: 36px;
+    display: block;
+    margin: 20px auto 0;
+  }
+}
+.event-popup-box {
+  width: 300px;
+  height: fit-content;
+  background: linear-gradient(360deg, #272730 0%, #634dac 100%);
+  border-radius: 24px;
+  backdrop-filter: blur(4px);
+  position: relative;
+  .event-popup-box2 {
+    width: 100%;
+    height: 100%;
+    background: url('@/static/images/popup-bg-event.png') no-repeat center top;
+    background-size: 100% auto;
+
+    .popup-title-img1 {
+      width: 100%;
+      height: auto;
+    }
+    .popup-title-img2 {
+      width: 140px;
+      height: auto;
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      margin: auto;
+    }
+
+    .event-content {
+      width: 90%;
+      margin: 0 auto;
+      padding-bottom: 20px;
+      .event-title {
+        font-family: Poppins;
+        font-weight: 600;
+        font-size: 16px;
+        color: #ffffff;
+        text-align: center;
+      }
+      .event-content-box {
+        width: 100%;
+        border-radius: 24px;
+        background: #3c3065;
+        border: 1px solid #6146be;
+        font-family: Poppins;
+        font-weight: 400;
+        font-size: 14px;
+        color: #ffffff;
+        padding: 20px 10px;
+        margin: 20px 0;
+        position: relative;
+        .event-content-box-title {
+          width: fit-content;
+          height: 30px;
+          line-height: 30px;
+          background: linear-gradient(180deg, #8463f7 0%, #4d3a91 111.23%);
+          border-radius: 24px;
+          border: 1px solid #8978c1;
+          padding: 0 10px;
+          font-family: Poppins;
+          font-weight: 400;
+          font-size: 14px;
+          color: #ffffff;
+          position: absolute;
+          left: 0;
+          top: -15px;
+        }
+        .event-content-box-content {
+          width: 100%;
+          max-height: 300px;
+        }
+      }
+    }
+  }
+}
+</style>

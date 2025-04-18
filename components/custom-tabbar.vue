@@ -1,14 +1,18 @@
 <!-- 自定义底部导航栏 -->
 <template>
   <view class="custom-tabbar">
-    <view class="custom-tabbar-item">
+    <view class="custom-tabbar-item" @click="toMemory">
       <image src="/static/images/tab-memory.png" mode="widthFix" />
       <text>Memory</text>
     </view>
+
     <!-- <view class="record-btn" @click="toRecord">
-      <image src="/static/images/record-btn.png" mode="widthFix" />
+      <view class="record-btn-box">
+        <image src="/static/images/record-btn.png" mode="widthFix" />
+      </view>
     </view> -->
-    <view class="custom-tabbar-item">
+
+    <view class="custom-tabbar-item" @click="toTasks">
       <image src="/static/images/tab-tasks.png" mode="widthFix" />
       <text>Tasks</text>
     </view>
@@ -16,11 +20,23 @@
 </template>
 
 <script setup>
-// const toRecord = () => {
-//   uni.navigateTo({
-//     url: '/pages/record/index'
-//   });
-// };
+const toRecord = () => {
+  uni.navigateTo({
+    url: '/pages/home/index'
+  });
+};
+
+const toMemory = () => {
+  uni.navigateTo({
+    url: '/pages/memory/index'
+  });
+};
+
+const toTasks = () => {
+  uni.navigateTo({
+    url: '/pages/tasks/index'
+  });
+};
 </script>
 
 <style lang="scss" scoped>

@@ -1,7 +1,7 @@
 <template>
   <custom-header />
 
-  <scroll-view scroll-y="true" class="scroll-memory"> </scroll-view>
+  <scroll-view scroll-y="true" class="scroll-tasks"> </scroll-view>
 
   <custom-tabbar />
 </template>
