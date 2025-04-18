@@ -10,7 +10,14 @@
                 <div class="type-box">
                   <image src="/static/images/icon-type-write.png" mode="widthFix" />
                 </div>
-                <view class="text-box" v-if="item.pointsData?.Keywords.length > 0">
+
+                <view
+                  class="textlodingbox"
+                  v-if="againTransferTextLoading && againTransferTextId === item.startTimestamp">
+                  <uni-load-more iconType="circle" status="loading" :showText="false" color="#fff" />
+                  <!-- <i class="uni-toast__icon uni-loading"></i> -->
+                </view>
+                <view class="text-box" v-else-if="item.pointsData?.Keywords.length > 0">
                   <view class="title">
                     {{ item.pointsData?.Keywords.join(' | ') }}
                   </view>
@@ -39,7 +46,8 @@
 
       <view class="text-item2" v-if="item.isOpen">
         <view class="textlodingbox" v-if="againTransferTextLoading && againTransferTextId === item.startTimestamp">
-          <i class="uni-toast__icon uni-loading"></i>
+          <uni-load-more iconType="circle" status="loading" :showText="false" color="#fff" />
+          <!-- <i class="uni-toast__icon uni-loading"></i> -->
         </view>
         <view class="btn-text" v-else>
           <text @click="handleAgainTransferText(item)">重新转录</text>
@@ -99,12 +107,12 @@ const newRecordList = ref([]);
 watch(recordList, (newVal) => {
   console.log('监听录音列表', newVal.length, newVal);
   newRecordList.value = newVal.map((item, index) => {
-    return { ...item, isOpen: index == 0 };
+    return item;
   });
 });
 
 onMounted(() => {
-  // console.log('录音列表', recordList.value.length, recordList.value);
+  console.log('录音列表', recordList.value.length, recordList.value);
 
   newRecordList.value = recordList.value.map((item, index) => {
     return { ...item, isOpen: index == 0 };
@@ -150,7 +158,16 @@ const transferText = async (newFileName) => {
 
 const getImageSynthesisUrl = async (item) => {
   try {
-    const imageSynthesisTask = await createImageSynthesisTask(item.pointsData?.Actions[0].Text);
+    let prompt = '';
+    if (item.pointsData?.Actions.length > 0) {
+      item.pointsData?.Actions.forEach((action) => {
+        prompt += action.Text;
+      });
+    } else {
+      prompt = item.pointsData?.Actions[0].Text;
+    }
+    console.log('prompt', prompt);
+    const imageSynthesisTask = await createImageSynthesisTask(prompt);
     const synthesisTask = await getSynthesisTask(imageSynthesisTask.task_id);
     return synthesisTask.results[0].url;
   } catch (error) {
@@ -172,7 +189,7 @@ const handleAgainTransferText = async (item) => {
     const { pointsData, transcriptionData } = await transferText(newFileName);
 
     // 更新记录列表
-    const updatedRecordList = recordList.value.map((record) => {
+    const updatedRecordList = newRecordList.value.map((record) => {
       if (record.startTimestamp === item.startTimestamp) {
         return { ...record, pointsData, transcriptionData };
       }

@@ -78,8 +78,6 @@ const againTransferTextLoading = computed(() => store.state.againTransferTextLoa
 const vue3This = getCurrentInstance().proxy;
 const isRecording = ref(false);
 const recordDuration = ref('');
-// const startTimestamp = Date.now();
-// const fileName = formatFileName(startTimestamp);
 
 onMounted(() => {
   vue3This.isMounted = true;
@@ -264,24 +262,7 @@ const transferText = async (newFileName) => {
     const pointsResult = await getTaskResult(pointsId, '要点提炼');
 
     const transcriptionData = await getTaskResultData(transcriptionResult.Transcription, '转录');
-    //     {
-    //     "TaskId": "223110df025a4b4a858fbb100660aedd",
-    //     "Transcription": {
-    //         "AudioInfo": {
-    //             "Size": 4320,
-    //             "Duration": 2160,
-    //             "SampleRate": 16000,
-    //             "Language": "fspk"
-    //         }
-    //     }
-    // }
     const pointsData = await getTaskResultData(pointsResult.MeetingAssistance, '要点提炼');
-    //     {
-    //     "TaskId": "0db6c5c9ec7c4a98a35d1c43dacf815b",
-    //     "MeetingAssistance": {
-    //         "Keywords": []
-    //     }
-    // }
 
     return {
       transcriptionData: transcriptionData.Transcription,
