@@ -1,26 +1,28 @@
 <template>
-  <custom-header />
+  <scroll-view scroll-y="true" class="scroll-app">
+    <custom-header />
 
-  <scroll-view scroll-y="true" class="scroll-home">
-    <event-swiper />
+    <scroll-view scroll-y="true" class="scroll-home">
+      <event-swiper />
 
-    <memory-list />
+      <memory-list />
+    </scroll-view>
+
+    <view class="record-btn">
+      <view class="record-btn-box">
+        <button class="stop-btn" v-if="isRecording" @click="recStop">
+          <uni-icons custom-prefix="iconfont" type="icon-stop" size="30" color="#ffffff" />
+        </button>
+        <image src="/static/images/record-btn.png" mode="widthFix" v-else @click="recReq" />
+      </view>
+
+      <view class="recwave" v-if="isRecording">
+        <canvas type="2d" class="recwave-Histogram2"></canvas>
+      </view>
+    </view>
+
+    <custom-tabbar />
   </scroll-view>
-
-  <view class="record-btn">
-    <view class="record-btn-box">
-      <button class="stop-btn" v-if="isRecording" @click="recStop">
-        <uni-icons custom-prefix="iconfont" type="icon-stop" size="30" color="#ffffff" />
-      </button>
-      <image src="/static/images/record-btn.png" mode="widthFix" v-else @click="recReq" />
-    </view>
-
-    <view class="recwave" v-if="isRecording">
-      <canvas type="2d" class="recwave-Histogram2"></canvas>
-    </view>
-  </view>
-
-  <custom-tabbar />
 </template>
 
 <script setup>

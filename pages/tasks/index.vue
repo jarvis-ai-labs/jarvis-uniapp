@@ -1,9 +1,11 @@
 <template>
-  <custom-header />
+  <scroll-view scroll-y="true" class="scroll-app">
+    <custom-header />
 
-  <scroll-view scroll-y="true" class="scroll-tasks"> </scroll-view>
+    <scroll-view scroll-y="true" class="scroll-tasks"> </scroll-view>
 
-  <custom-tabbar />
+    <custom-tabbar />
+  </scroll-view>
 </template>
 
 <script setup>

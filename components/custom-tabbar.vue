@@ -6,11 +6,11 @@
       <text>Memory</text>
     </view>
 
-    <!-- <view class="record-btn" @click="toRecord">
+    <view class="record-btn" v-if="currentPage !== '/pages/home/index'" @click="toRecord">
       <view class="record-btn-box">
         <image src="/static/images/record-btn.png" mode="widthFix" />
       </view>
-    </view> -->
+    </view>
 
     <view class="custom-tabbar-item" @click="toTasks">
       <image src="/static/images/tab-tasks.png" mode="widthFix" />
@@ -20,23 +20,47 @@
 </template>
 
 <script setup>
-const toRecord = () => {
+import { ref, onMounted } from 'vue';
+
+const currentPage = ref('');
+
+const toMemory = () => {
+  const pages = getCurrentPages();
+  const currentPagePath = pages[pages.length - 1].route;
+  if (currentPagePath === 'pages/memory/index') return;
   uni.navigateTo({
-    url: '/pages/home/index'
+    url: '/pages/memory/index',
+    animationType: 'slide-in-left',
+    animationDuration: 200
   });
 };
 
-const toMemory = () => {
+const toRecord = () => {
+  const pages = getCurrentPages();
+  const currentPagePath = pages[pages.length - 1].route;
+  if (currentPagePath === 'pages/home/index') return;
   uni.navigateTo({
-    url: '/pages/memory/index'
+    url: '/pages/home/index',
+    animationType: 'slide-in-bottom',
+    animationDuration: 200
   });
 };
 
 const toTasks = () => {
+  const pages = getCurrentPages();
+  const currentPagePath = pages[pages.length - 1].route;
+  if (currentPagePath === 'pages/tasks/index') return;
   uni.navigateTo({
-    url: '/pages/tasks/index'
+    url: '/pages/tasks/index',
+    animationType: 'slide-in-right',
+    animationDuration: 200
   });
 };
+
+onMounted(() => {
+  const pages = getCurrentPages();
+  currentPage.value = pages[pages.length - 1].route;
+});
 </script>
 
 <style lang="scss" scoped>
@@ -66,6 +90,11 @@ const toTasks = () => {
       font-size: 12px;
       color: #ffffff;
       margin-top: 5px;
+    }
+
+    &.disabled {
+      opacity: 0.5;
+      pointer-events: none;
     }
   }
 }

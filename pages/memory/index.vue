@@ -1,12 +1,146 @@
 <template>
-  <custom-header />
+  <scroll-view scroll-y="true" class="scroll-app">
+    <custom-header />
 
-  <scroll-view scroll-y="true" class="scroll-memory"> </scroll-view>
+    <uni-calendar ref="calendar" :insert="false" @confirm="confirm" />
+    <!-- <uni-datetime-picker type="date" :clear-icon="false" v-model="single" @maskClick="maskClick" /> -->
 
-  <custom-tabbar />
+    <view class="search-box">
+      <button @click="open" class="date-btn">
+        <text>{{ currentDate }}</text>
+        <uni-icons type="calendar" size="20" color="#815ef6" />
+      </button>
+      <uni-easyinput prefixIcon="search" v-model="searchValue" placeholder="搜索"> </uni-easyinput>
+    </view>
+
+    <scroll-view scroll-y="true" class="scroll-memory">
+      <view class="text-list">
+        <view class="text-list-item" v-for="item in newRecordList" :key="item.startTimestamp">
+          <view class="text-item-box">
+            <uni-swipe-action>
+              <uni-swipe-action-item>
+                <view class="text-item">
+                  <div class="item-left">
+                    <div class="type-box">
+                      <image src="/static/images/icon-type-write.png" mode="widthFix" />
+                    </div>
+
+                    <view class="text-box" v-if="item.pointsData?.Keywords.length > 0">
+                      <view class="title">
+                        {{ item.pointsData?.Keywords.join(' | ') }}
+                      </view>
+                      <view class="content">
+                        {{ item.startTimeText }}
+                      </view>
+                    </view>
+                    <view class="text-box" v-else>
+                      <view class="title">
+                        {{ item.startTimeText }}
+                      </view>
+                    </view>
+                  </div>
+                  <button class="btn-text" @click="item.isOpen = !item.isOpen">文字</button>
+                </view>
+                <template #right>
+                  <view class="more-button-box">
+                    <button class="more-button" @click="handleDelete(item)">
+                      <uni-icons type="trash-filled" size="20" color="#3d3d4a" />
+                    </button>
+                  </view>
+                </template>
+              </uni-swipe-action-item>
+            </uni-swipe-action>
+          </view>
+
+          <view class="text-item2" v-if="item.isOpen">
+            <scroll-view scroll-y="true" class="text-item2-list">
+              <view class="text-box" v-for="text in item.transcriptionData?.Paragraphs" :key="text.ParagraphId">
+                <view class="title">
+                  <text>说话人{{ text.SpeakerId }}: </text>
+                  <text>{{ formatDate(parseInt(text.ParagraphId / 1e6)).split(' ')[1] }}</text>
+                </view>
+                <view class="content">
+                  <text v-for="word in text.Words" :key="word.Id">{{ word.Text }}</text>
+                </view>
+              </view>
+            </scroll-view>
+          </view>
+        </view>
+
+        <uni-popup ref="deleteDialog" type="dialog">
+          <uni-popup-dialog
+            type="info"
+            cancelText="取消"
+            confirmText="确定"
+            content="确定删除该录音吗？"
+            @confirm="deleteDialogConfirm"
+            @close="deleteDialogClose">
+          </uni-popup-dialog>
+        </uni-popup>
+      </view>
+    </scroll-view>
+
+    <custom-tabbar />
+  </scroll-view>
 </template>
 
 <script setup>
 import CustomTabbar from '@/components/custom-tabbar.vue';
 import CustomHeader from '@/components/custom-header.vue';
+import { ref, onMounted, computed, watch } from 'vue';
+import { formatDate } from '@/utils';
+import { useStore } from 'vuex';
+
+const store = useStore();
+const recordList = computed(() => store.state.recordList);
+const newRecordList = ref([]);
+const dialogInfo = ref(null);
+const deleteDialog = ref(null);
+const calendar = ref(null);
+const currentDate = ref('');
+const searchValue = ref('');
+
+watch(recordList, (newVal) => {
+  console.log('监听录音列表', newVal.length, newVal);
+  newRecordList.value = newVal.filter((item) => {
+    return item.startTimeText.includes(currentDate.value);
+  });
+});
+
+onMounted(() => {
+  console.log('录音列表', recordList.value.length, recordList.value);
+
+  currentDate.value = formatDate(new Date().getTime(), 'yyyy/MM/dd');
+  newRecordList.value = recordList.value.filter((item) => {
+    return item.startTimeText.includes(currentDate.value);
+  });
+  console.log(currentDate.value, '录音列表', newRecordList.value.length, newRecordList.value);
+});
+
+const handleDelete = (item) => {
+  dialogInfo.value = item;
+  deleteDialog.value.open();
+};
+
+const deleteDialogConfirm = () => {
+  const recordArr = recordList.value.filter((record) => record.startTimestamp !== dialogInfo.value.startTimestamp);
+  store.commit('setRecordList', recordArr);
+  deleteDialog.value.close();
+};
+
+const deleteDialogClose = () => {
+  deleteDialog.value.close();
+};
+
+const open = () => {
+  calendar.value.open();
+};
+const confirm = (e) => {
+  console.log('confirm 返回:', e); // fulldate: "2025-04-18"
+  currentDate.value = e.fulldate.replace(/-/g, '/');
+  newRecordList.value = recordList.value.filter((item) => {
+    return item.startTimeText.includes(currentDate.value);
+  });
+  console.log(currentDate.value, '录音列表', newRecordList.value.length, newRecordList.value);
+};
 </script>

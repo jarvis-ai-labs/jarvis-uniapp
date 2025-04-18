@@ -2,7 +2,7 @@ import { createStore } from 'vuex';
 
 const store = createStore({
   state: {
-    recordList: uni.getStorageSync('jarvis-record') || [],
+    recordList: uni.getStorageSync('jarvis-record') || localStorage.getItem('jarvis-record') || [],
     popupEventData: null,
     transferTextLoading: false,
     againTransferTextLoading: false
@@ -11,6 +11,7 @@ const store = createStore({
     setRecordList(state, data) {
       state.recordList = data;
       uni.setStorageSync('jarvis-record', data);
+      localStorage.setItem('jarvis-record', data);
     },
     setPopupEventData(state, data) {
       state.popupEventData = data;

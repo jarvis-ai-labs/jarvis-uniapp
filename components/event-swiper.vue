@@ -30,7 +30,7 @@
         <view class="event-box">
           <view class="event-box-content">
             <uni-icons type="checkbox" size="24" color="#ffffff" />
-            <button class="event-btn" @click="handleImageSynthesis">Event</button>
+            <button class="event-btn">Event</button>
           </view>
         </view>
       </z-swiper-item>

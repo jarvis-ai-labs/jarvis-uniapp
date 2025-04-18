@@ -39,8 +39,8 @@
 <style lang="scss" scoped>
 .custom-header {
   width: 100%;
-  height: 180px;
-  padding: 30px;
+  height: 160px;
+  padding: 20px 20px 0 20px;
   background: url('/static/images/bg-header.png') no-repeat left center;
   background-size: auto 120%;
   position: relative;
