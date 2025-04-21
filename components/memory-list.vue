@@ -112,6 +112,11 @@ watch(recordList, (newVal) => {
 onMounted(() => {
   console.log('录音列表', recordList.value.length, recordList.value);
 
+  recordList.value.forEach((element) => {
+    element.startTimeText = formatDate(element.startTimestamp);
+  });
+  store.commit('setRecordList', recordList.value);
+
   newRecordList.value = recordList.value.map((item, index) => {
     return { ...item, isOpen: index == 0 };
   });

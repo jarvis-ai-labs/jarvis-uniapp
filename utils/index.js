@@ -1,4 +1,4 @@
-export function formatDate(strDate, strFormat = 'yyyy/MM/dd HH:mm:ss') {
+export function formatDate(strDate, strFormat = 'yyyy-MM-dd HH:mm:ss') {
   if (!strDate) return;
   if (typeof strDate == 'string') {
     strDate = new Date(strDate.replace(/-/g, '/'));

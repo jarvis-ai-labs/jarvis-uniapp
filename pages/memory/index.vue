@@ -52,7 +52,7 @@
               <view class="text-box" v-for="text in item.transcriptionData?.Paragraphs" :key="text.ParagraphId">
                 <view class="title">
                   <text>说话人{{ text.SpeakerId }}: </text>
-                  <text>{{ formatDate(parseInt(text.ParagraphId / 1e6)).split(' ')[1] }}</text>
+                  <text>{{ formatDate(parseInt(text.ParagraphId / 1e6), 'HH:mm:ss') }}</text>
                 </view>
                 <view class="content">
                   <text v-for="word in text.Words" :key="word.Id">{{ word.Text }}</text>
