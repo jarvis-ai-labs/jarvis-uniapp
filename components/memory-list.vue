@@ -1,13 +1,13 @@
 <template>
-  <view class="text-list">
+  <view class="record-list">
     <view class="loading-box" v-if="transferTextLoading">
       <uni-load-more iconType="circle" status="loading" :showText="false" color="#fff" />
     </view>
-    <view class="text-list-item" v-for="item in newRecordList" :key="item.startTimestamp">
-      <view class="text-item-box">
+    <view class="record-list-item" v-for="item in newRecordList" :key="item.startTimestamp">
+      <view class="record-item-box">
         <uni-swipe-action>
           <uni-swipe-action-item>
-            <view class="text-item">
+            <view class="record-item">
               <div class="item-left">
                 <div class="type-box">
                   <image src="/static/images/icon-type-write.png" mode="widthFix" />
@@ -45,7 +45,7 @@
         </uni-swipe-action>
       </view>
 
-      <view class="text-item2" v-if="item.isOpen">
+      <view class="record-item-box2" v-if="item.isOpen">
         <view class="loading-box" v-if="againTransferTextLoading && againTransferTextId === item.startTimestamp">
           <uni-load-more iconType="circle" status="loading" :showText="false" color="#fff" />
         </view>
@@ -53,7 +53,7 @@
           <text @click="handleAgainTransferText(item)">重新转录</text>
         </view>
 
-        <scroll-view scroll-y="true" class="text-item2-list">
+        <scroll-view scroll-y="true" class="record-item-box2-list">
           <view class="text-box" v-for="text in item.transcriptionData?.Paragraphs" :key="text.ParagraphId">
             <view class="title">
               <text>说话人{{ text.SpeakerId }}: </text>

@@ -2,24 +2,19 @@
   <scroll-view scroll-y="true" class="scroll-app">
     <custom-header />
 
-    <uni-calendar ref="calendar" :insert="false" @confirm="confirm" />
-    <!-- <uni-datetime-picker type="date" :clear-icon="false" v-model="single" @maskClick="maskClick" /> -->
-
     <view class="search-box">
-      <button @click="open" class="date-btn">
-        <text>{{ currentDate }}</text>
-        <uni-icons type="calendar" size="20" color="#815ef6" />
-      </button>
+      <uni-datetime-picker type="date" :clear-icon="false" v-model="currentDate" @change="changeDate" />
+
       <uni-easyinput prefixIcon="search" v-model="searchValue" placeholder="搜索"> </uni-easyinput>
     </view>
 
     <scroll-view scroll-y="true" class="scroll-memory">
-      <view class="text-list">
-        <view class="text-list-item" v-for="item in newRecordList" :key="item.startTimestamp">
-          <view class="text-item-box">
+      <view class="record-list">
+        <view class="record-list-item" v-for="item in newRecordList" :key="item.startTimestamp">
+          <view class="record-item-box">
             <uni-swipe-action>
               <uni-swipe-action-item>
-                <view class="text-item">
+                <view class="record-item">
                   <div class="item-left">
                     <div class="type-box">
                       <image src="/static/images/icon-type-write.png" mode="widthFix" />
@@ -52,8 +47,8 @@
             </uni-swipe-action>
           </view>
 
-          <view class="text-item2" v-if="item.isOpen">
-            <scroll-view scroll-y="true" class="text-item2-list">
+          <view class="record-item-box2" v-if="item.isOpen">
+            <scroll-view scroll-y="true" class="record-item-box2-list">
               <view class="text-box" v-for="text in item.transcriptionData?.Paragraphs" :key="text.ParagraphId">
                 <view class="title">
                   <text>说话人{{ text.SpeakerId }}: </text>
@@ -87,7 +82,7 @@
 <script setup>
 import CustomTabbar from '@/components/custom-tabbar.vue';
 import CustomHeader from '@/components/custom-header.vue';
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { formatDate } from '@/utils';
 import { useStore } from 'vuex';
 
@@ -96,26 +91,18 @@ const recordList = computed(() => store.state.recordList);
 const newRecordList = ref([]);
 const dialogInfo = ref(null);
 const deleteDialog = ref(null);
-const calendar = ref(null);
 const currentDate = ref('');
 const searchValue = ref('');
 
-watch(recordList, (newVal) => {
-  console.log('监听录音列表', newVal.length, newVal);
-  newRecordList.value = newVal.filter((item) => {
-    return item.startTimeText.includes(currentDate.value);
-  });
-});
+const changeDate = (e) => {
+  currentDate.value = e;
 
-onMounted(() => {
-  console.log('录音列表', recordList.value.length, recordList.value);
-
-  currentDate.value = formatDate(new Date().getTime(), 'yyyy/MM/dd');
   newRecordList.value = recordList.value.filter((item) => {
     return item.startTimeText.includes(currentDate.value);
   });
+
   console.log(currentDate.value, '录音列表', newRecordList.value.length, newRecordList.value);
-});
+};
 
 const handleDelete = (item) => {
   dialogInfo.value = item;
@@ -132,15 +119,16 @@ const deleteDialogClose = () => {
   deleteDialog.value.close();
 };
 
-const open = () => {
-  calendar.value.open();
-};
-const confirm = (e) => {
-  console.log('confirm 返回:', e); // fulldate: "2025-04-18"
-  currentDate.value = e.fulldate.replace(/-/g, '/');
-  newRecordList.value = recordList.value.filter((item) => {
-    return item.startTimeText.includes(currentDate.value);
+watch(recordList, (newVal) => {
+  changeDate(currentDate.value);
+});
+
+onMounted(() => {
+  console.log('录音列表', recordList.value.length, recordList.value);
+
+  nextTick(() => {
+    const time = new Date().getTime() - 86400000;
+    changeDate(formatDate(time, 'yyyy-MM-dd'));
   });
-  console.log(currentDate.value, '录音列表', newRecordList.value.length, newRecordList.value);
-};
+});
 </script>

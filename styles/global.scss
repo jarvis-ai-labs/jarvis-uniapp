@@ -64,6 +64,9 @@ uni-slider .uni-slider-handle-wrapper {
   .scroll-memory {
     height: calc(100vh - 160px - 60px - 100px);
   }
+  .scroll-tasks {
+    height: calc(100vh - 160px - 60px - 100px);
+  }
 }
 
 .record-btn {
@@ -107,7 +110,7 @@ uni-slider .uni-slider-handle-wrapper {
   }
 }
 
-.text-list {
+.record-list {
   width: 100%;
   padding: 0 20px 50px 20px;
 
@@ -125,19 +128,19 @@ uni-slider .uni-slider-handle-wrapper {
     }
   }
 
-  .text-list-item {
+  .record-list-item {
     width: 100%;
     background: #1d1d23;
     border-radius: 18px;
     margin-bottom: 10px;
-    .text-item-box {
+    .record-item-box {
       width: 100%;
       height: fit-content;
       background: #272730;
       border-radius: 18px;
       padding: 10px;
     }
-    .text-item {
+    .record-item {
       width: 100%;
       height: fit-content;
       display: flex;
@@ -214,7 +217,7 @@ uni-slider .uni-slider-handle-wrapper {
       }
     }
 
-    .text-item2 {
+    .record-item-box2 {
       width: 100%;
       padding: 10px;
       .btn-text {
@@ -228,7 +231,7 @@ uni-slider .uni-slider-handle-wrapper {
         color: #815ef6;
       }
 
-      .text-item2-list {
+      .record-item-box2-list {
         width: 100%;
         max-height: calc(100vh - 400px);
         .text-box {
@@ -272,25 +275,24 @@ uni-slider .uni-slider-handle-wrapper {
 .search-box {
   padding: 0 20px;
   margin-bottom: 10px;
-  .date-btn {
-    width: 100%;
-    height: 40px;
-    border-radius: 20px;
-    background: #383744;
-    font-family: Avenir;
-    font-weight: 300;
-    font-size: 16px;
-    color: #815ef6;
+  .uni-date-x--border {
+    border-radius: 20px !important;
+    border: none !important;
     margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    .uni-icons {
-      position: absolute;
-      right: 20px;
-      top: 50%;
-      transform: translateY(-50%);
+    .uni-date-x {
+      border-radius: 20px !important;
+      background: #383744 !important;
+      font-family: Avenir;
+      font-weight: 300;
+      font-size: 16px;
+      color: #815ef6;
+      .icon-calendar {
+        color: #815ef6 !important;
+      }
+      .uni-date__x-input {
+        height: 40px;
+        line-height: 40px;
+      }
     }
   }
 

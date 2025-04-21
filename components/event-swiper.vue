@@ -187,8 +187,8 @@ watch(recordList, (newVal) => {
 const updateEventLists = () => {
   if (!swiperEventInstance.value || !swiperEventInstance2.value || !swiperEventInstance3.value) return;
 
-  const newEventList = recordList.value.filter((item) => item.pointsData?.Actions);
-  oldEventList.value = newEventList.sort((a, b) => a.startTimestamp - b.startTimestamp);
+  const eventList = recordList.value.filter((item) => item.pointsData?.Actions);
+  oldEventList.value = eventList.sort((a, b) => a.startTimestamp - b.startTimestamp);
 
   console.log('事件列表', oldEventList.value.length, oldEventList.value);
 
